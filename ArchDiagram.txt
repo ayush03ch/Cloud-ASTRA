@@ -1,0 +1,45 @@
+                      +---------------------+
+                      |     Web Dashboard   |
+                      |  (Flask / React)    |
+                      +---------+-----------+
+                                |
+                user provides   | Role ARN + External ID
+                role_arn/ex_id  v
++-------------------------------+--------------------------------+
+|                           Orchestrator                            |
+|  - API gateway / controller (routes events)                        |
+|  - Supervisor Agent (routes to service agents)                     |
++----+--------------------+-------------------+---------------------+
+     |                    |                   |
+     |                    |                   |
+     v                    v                   v
++--------+            +--------+           +--------+
+| S3_Agent|           | IAM_Agent|         | EC2_Agent|   ...etc
+| (service-specific)  | (future) |         | (future) |
++---+----+            +----+----+         +----+----+
+    |                      |                   |
+    |                      |                   |
+    |  Rule Engine         |                   |
+    |  (YAML/JSON rules)   |                   |
+    |      |               |                   |
+    |      v               |                   |
+    |  Doc Search (RAG)    |                   |
+    |  (vector DB + index) |                   |
+    |      |               |                   |
+    |      v               |                   |
+    |  LLM Fallback (only when needed)         |
+    |      |                                   |
+    |      v                                   |
+    |  Execution Adapter (boto3 / SDK)         |
+    |  - Dry-run / simulation                  |
+    |  - Apply with approval/auto-gate         |
+    v                                          v
++---------------------------------------------------------------+
+|  Cross-account access: STS AssumeRole (External ID + trust)   |
+|  (Agent uses temporary creds for target account operations)   |
++---------------------------------------------------------------+
+                 |
+                 v
+        Customer AWS Account(s)
+        - CloudTrail / CloudWatch / S3 APIs
+        - Buckets, Policies, ACLs, PAB, Encryption

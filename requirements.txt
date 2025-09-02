@@ -1,0 +1,25 @@
+# Core
+boto3==1.35.36          # AWS SDK for Python
+botocore==1.35.36       # Core AWS library (pinned with boto3)
+PyYAML==6.0.2           # For rules.yaml parsing
+
+# Logging & Utilities
+rich==13.9.2            # Pretty printing/logging for CLI
+coloredlogs==15.0.1     # Optional, for nice console logs
+
+# LLM / AI (future-proofing)
+openai==1.47.0          # OpenAI API (DocSearch/LLM fallback)
+tiktoken==0.8.0         # Token counting for OpenAI
+transformers==4.45.1    # If you switch to HuggingFace models
+sentence-transformers==3.2.0  # For embedding-based doc search
+
+# Testing & Dev
+pytest==8.3.3           # Testing framework
+pytest-mock==3.14.0     # For mocking boto3/fixer in tests
+moto==5.0.15            # Mock AWS services for testing
+black==24.8.0           # Code formatting
+flake8==7.1.1           # Linting
+
+# Optional (if you want persistence or orchestration)
+sqlalchemy==2.0.36      # For storing findings/results
+pydantic==2.9.2         # Data validation / schema enforcement

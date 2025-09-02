@@ -1,0 +1,57 @@
+# agents/s3_agent/rules.yaml
+# Common S3 misconfigurations and their fixes
+- id: s3_public_access_block
+  detection: "Bucket allows public read access"
+  fix:
+    action: "put_bucket_acl"
+    params:
+      ACL: "private"
+  auto_safe: true
+
+- id: s3_authenticated_users_access
+  detection: "Bucket grants access to authenticated AWS users (too permissive)"
+  fix:
+    action: "put_bucket_acl"
+    params:
+      ACL: "private"
+  auto_safe: true
+
+- id: s3_unencrypted_bucket
+  detection: "Bucket does not have default encryption"
+  fix:
+    action: "put_bucket_encryption"
+    params:
+      ServerSideEncryptionConfiguration:
+        Rules:
+          - ApplyServerSideEncryptionByDefault:
+              SSEAlgorithm: "AES256"
+  auto_safe: true
+
+- id: s3_no_bucket_logging
+  detection: "Bucket does not have server access logging enabled"
+  fix:
+    action: "put_bucket_logging"
+    params:
+      BucketLoggingStatus:
+        LoggingEnabled:
+          TargetBucket: "LOGGING-BUCKET"   # Replace with your central logging bucket
+          TargetPrefix: "logs/"
+  auto_safe: false   # manual check needed (logging bucket must exist)
+
+# - id: s3_versioning_disabled
+#   detection: "Bucket versioning is disabled"
+#   fix:
+#     action: "put_bucket_versioning"
+#     params:
+#       VersioningConfiguration:
+#         Status: "Enabled"
+#   auto_safe: true
+
+# - id: s3_mfa_delete_disabled
+#   detection: "MFA delete is not enabled on the bucket"
+#   fix:
+#     action: "put_bucket_versioning"
+#     params:
+#       VersioningConfiguration:
+#         MFADelete: "Enabled"
+#   auto_safe: false   # requires manual MFA device setup
