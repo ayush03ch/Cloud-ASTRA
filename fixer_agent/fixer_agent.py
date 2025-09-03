@@ -19,6 +19,15 @@ class FixerAgent:
         applied_fixes = []
         pending_fixes = []
 
+        # Extract findings from nested structure if needed
+        if isinstance(findings, dict):
+            # Flatten all findings from all services
+            actual_findings = []
+            for service, service_findings in findings.items():
+                if isinstance(service_findings, list):
+                    actual_findings.extend(service_findings)
+            findings = actual_findings
+        
         for finding in findings:
             if finding.get("auto_safe", False):
                 success = self.executor.run(finding)

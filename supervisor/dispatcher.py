@@ -13,7 +13,7 @@ class Dispatcher:
     def dispatch(self):
         results = {}
         # Run S3 Agent
-        s3_agent = S3Agent(self.creds)
+        s3_agent = S3Agent(creds=self.creds)
         results["s3"] = s3_agent.scan()
 
         # In future: add EC2Agent, IAMAgent, etc.

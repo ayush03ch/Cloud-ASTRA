@@ -7,17 +7,44 @@ import inspect
 from pathlib import Path
 import yaml
 
+from agents.s3_agent.executor import S3Executor
+
 from .doc_search import DocSearch
 from .llm_fallback import LLMFallback
 
 
 class S3Agent:
     def __init__(self, client=None, creds=None):
-        self.client = client or boto3.client("s3")
+        if client and hasattr(client, 'list_buckets'):  
+            # If explicitly passed a boto3 client (check it has S3 methods)
+            self.client = client
+        elif client and isinstance(client, dict):
+            # If first param is actually credentials dict
+            self.client = boto3.client(
+                "s3",
+                aws_access_key_id=client.get("aws_access_key_id"),
+                aws_secret_access_key=client.get("aws_secret_access_key"),
+                aws_session_token=client.get("aws_session_token"),
+                region_name=client.get("region", "us-east-1"),
+            )
+        elif creds:  
+            # Build boto3 client from creds dict
+            self.client = boto3.client(
+                "s3",
+                aws_access_key_id=creds.get("aws_access_key_id"),
+                aws_secret_access_key=creds.get("aws_secret_access_key"),
+                aws_session_token=creds.get("aws_session_token"),
+                region_name=creds.get("region", "us-east-1"),
+            )
+        else:
+            # Fallback: default boto3 client (uses local ~/.aws/credentials or env vars)
+            self.client = boto3.client("s3")
+            
         self.rules = self._load_rules()
         self.doc_search = DocSearch()
         self.llm_fallback = LLMFallback()
-        self.creds = creds
+        self.executor = S3Executor()
+
 
     def _load_rules(self):
         """Dynamically import all rule classes from rules/ directory."""

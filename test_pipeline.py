@@ -19,5 +19,18 @@ if __name__ == "__main__":
     # Step 2: Run full scan + fix
     results = supervisor.scan_and_fix()
     print("\n=== Final Results ===")
-    for r in results:
-        print(r)
+    print(f"📋 Findings: {len(results['findings'].get('s3', []))} S3 issues found")
+    print(f"✅ Auto-fixes applied: {len(results['auto_fixes_applied'])}")
+    print(f"⚠️ Pending manual fixes: {len(results['pending_fixes'])}")
+    
+    if results['auto_fixes_applied']:
+        print("\n🔧 Auto-fixes Applied:")
+        for fix in results['auto_fixes_applied']:
+            print(f"  - {fix['resource']}: {fix['status']}")
+            
+    if results['pending_fixes']:
+        print("\n⏳ Pending Manual Fixes:")
+        for fix in results['pending_fixes']:
+            print(f"  - {fix['resource']}: {fix['issue']}")
+    
+    print(f"\n🎉 Security scan complete!")
