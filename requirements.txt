@@ -13,6 +13,10 @@ tiktoken==0.8.0         # Token counting for OpenAI
 transformers==4.45.1    # If you switch to HuggingFace models
 sentence-transformers==3.2.0  # For embedding-based doc search
 
+# Web Interface
+Flask==3.0.0            # Web framework for UI
+requests==2.31.0        # HTTP library for testing API
+
 # Testing & Dev
 pytest==8.3.3           # Testing framework
 pytest-mock==3.14.0     # For mocking boto3/fixer in tests

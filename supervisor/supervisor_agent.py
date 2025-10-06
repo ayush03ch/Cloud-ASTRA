@@ -41,6 +41,16 @@ class SupervisorAgent:
             "pending_fixes": pending_fixes,
         }
 
+    def apply_manual_fix(self, resource, fix_type):
+        """Apply a specific manual fix for a resource."""
+        if not self.creds:
+            raise RuntimeError("Must call assume() before apply_manual_fix()")
+
+        fixer = FixerAgent(self.creds)
+        result = fixer.apply_specific_fix(resource, fix_type)
+        
+        return result
+
 # ---- Flask API Layer ----
 @app.route("/assume", methods=["POST"])
 def assume_and_scan():

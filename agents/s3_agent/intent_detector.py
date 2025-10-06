@@ -61,6 +61,9 @@ class IntentDetector:
         """
         print(f"🎯 Detecting intent for bucket: {bucket_name}")
         
+        # DEBUG: Show what user intent was received
+        print(f"🐛 DEBUG: user_intent parameter = {user_intent}")
+        
         # Priority 1: Explicit user intent
         if user_intent:
             intent = self._parse_user_intent(user_intent)

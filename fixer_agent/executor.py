@@ -126,12 +126,165 @@ class Executor:
             # All steps failed
             raise Exception(f"All fix attempts failed: {errors}")
             
+    def fix_public_access_directly(self, bucket_name):
+        """Directly apply public access block fix."""
+        try:
+            self._fix_public_access(bucket_name)
+            self.logger.info(f"✅ Successfully applied public access block to {bucket_name}")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to apply public access block to {bucket_name}: {e}")
+            return False
+    
+    def fix_index_document_directly(self, bucket_name):
+        """Directly fix index document configuration."""
+        try:
+            # Get current website configuration
+            try:
+                website_config = self.s3_client.get_bucket_website(Bucket=bucket_name)
+            except Exception:
+                website_config = {}
+            
+            # List objects to find HTML files
+            response = self.s3_client.list_objects_v2(Bucket=bucket_name, MaxKeys=100)
+            objects = response.get('Contents', [])
+            
+            # Find HTML files
+            html_files = []
+            for obj in objects:
+                key = obj['Key'].lower()
+                if key.endswith(('.html', '.htm')):
+                    html_files.append(obj['Key'])
+            
+            # Determine best index file
+            suggested_index = "index.html"  # default
+            if html_files:
+                # Prefer common index file names
+                for common_name in ['index.html', 'home.html', 'main.html', 'default.html']:
+                    if any(f.lower() == common_name for f in html_files):
+                        suggested_index = next(f for f in html_files if f.lower() == common_name)
+                        break
+                else:
+                    # Use first HTML file found
+                    suggested_index = html_files[0]
+            
+            # Update website configuration with correct index
+            self.s3_client.put_bucket_website(
+                Bucket=bucket_name,
+                WebsiteConfiguration={
+                    'IndexDocument': {'Suffix': suggested_index},
+                    'ErrorDocument': {'Key': 'error.html'}
+                }
+            )
+            
+            # Also apply proper website hosting configuration
+            self._fix_website_hosting(bucket_name)
+            
+            self.logger.info(f"✅ Successfully updated index document to {suggested_index} for {bucket_name}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to fix index document for {bucket_name}: {e}")
+            return False
+    
+    def disable_website_hosting_directly(self, bucket_name):
+        """Directly disable website hosting and secure bucket."""
+        try:
+            # Step 1: Remove website configuration
+            try:
+                self.s3_client.delete_bucket_website(Bucket=bucket_name)
+                self.logger.info(f"✅ Removed website hosting configuration for {bucket_name}")
+            except Exception as e:
+                if "NoSuchWebsiteConfiguration" not in str(e):
+                    self.logger.warning(f"⚠️ Could not remove website config for {bucket_name}: {e}")
+            
+            # Step 2: Apply data storage security (public access block + private policy)
+            self._fix_public_access(bucket_name)
+            
+            self.logger.info(f"✅ Successfully disabled website hosting and secured {bucket_name}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to disable website hosting for {bucket_name}: {e}")
+            return False
+    
+    def enable_website_hosting_directly(self, bucket_name):
+        """Directly enable website hosting with HTML file detection."""
+        try:
+            # List objects to find HTML files
+            response = self.s3_client.list_objects_v2(Bucket=bucket_name, MaxKeys=100)
+            objects = response.get('Contents', [])
+            
+            # Find HTML files
+            html_files = []
+            for obj in objects:
+                key = obj['Key'].lower()
+                if key.endswith(('.html', '.htm')):
+                    html_files.append(obj['Key'])
+            
+            # Determine index file
+            index_file = "index.html"  # default
+            if html_files:
+                # Prefer common names
+                for common_name in ['index.html', 'home.html', 'main.html', 'default.html']:
+                    if any(f.lower() == common_name for f in html_files):
+                        index_file = next(f for f in html_files if f.lower() == common_name)
+                        break
+                else:
+                    index_file = html_files[0]
+            
+            # Enable website hosting
+            self.s3_client.put_bucket_website(
+                Bucket=bucket_name,
+                WebsiteConfiguration={
+                    'IndexDocument': {'Suffix': index_file},
+                    'ErrorDocument': {'Key': 'error.html'}
+                }
+            )
+            
+            # Configure public access for website
+            self._fix_website_hosting(bucket_name)
+            
+            self.logger.info(f"✅ Successfully enabled website hosting for {bucket_name} with index: {index_file}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to enable website hosting for {bucket_name}: {e}")
+            return False
+    
+    def enable_public_access_directly(self, bucket_name):
+        """Directly enable public access for website hosting."""
+        try:
+            # Apply website hosting configuration (which includes public access)
+            self._fix_website_hosting(bucket_name)
+            
+            self.logger.info(f"✅ Successfully enabled public access for website {bucket_name}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ Failed to enable public access for {bucket_name}: {e}")
+            return False
+            
     def _fix_website_hosting(self, bucket_name):
-        """Fix website hosting configuration."""
+        """Fix website hosting configuration with proper order."""
         import json
         
         try:
-            # Step 1: Enable website hosting
+            # STEP 1: Disable Public Access Block first (to allow public policy)
+            print(f"🔓 Step 1: Configuring Public Access Block for website: {bucket_name}")
+            self.s3_client.put_public_access_block(
+                Bucket=bucket_name,
+                PublicAccessBlockConfiguration={
+                    'BlockPublicAcls': True,        # Block public ACLs (good security)
+                    'IgnorePublicAcls': True,       # Ignore public ACLs (good security) 
+                    'BlockPublicPolicy': False,     # ALLOW public policy (needed for website)
+                    'RestrictPublicBuckets': False  # Allow this specific public policy
+                }
+            )
+            self.logger.info(f"✅ Configured Public Access Block for website hosting on {bucket_name}")
+            
+            # STEP 2: Enable website hosting (if not already enabled)
+            print(f"🌐 Step 2: Enabling website hosting for: {bucket_name}")
             self.s3_client.put_bucket_website(
                 Bucket=bucket_name,
                 WebsiteConfiguration={
@@ -141,7 +294,8 @@ class Executor:
             )
             self.logger.info(f"✅ Enabled website hosting for {bucket_name}")
             
-            # Step 2: Create public read policy for objects
+            # STEP 3: Now apply the public read policy
+            print(f"📝 Step 3: Adding public read policy for website: {bucket_name}")
             policy = {
                 "Version": "2012-10-17",
                 "Statement": [
@@ -160,17 +314,7 @@ class Executor:
             )
             self.logger.info(f"✅ Added public read policy for {bucket_name}")
             
-            # Step 3: Configure Public Access Block for website hosting
-            self.s3_client.put_public_access_block(
-                Bucket=bucket_name,
-                PublicAccessBlockConfiguration={
-                    'BlockPublicAcls': True,        # Block public ACLs (good security)
-                    'IgnorePublicAcls': True,       # Ignore public ACLs (good security)
-                    'BlockPublicPolicy': False,     # Allow public policy (needed for website)
-                    'RestrictPublicBuckets': False  # Allow this specific public policy
-                }
-            )
-            self.logger.info(f"✅ Configured Public Access Block for website hosting on {bucket_name}")
+            print(f"🎉 Website hosting successfully configured for: {bucket_name}")
             
         except Exception as e:
             self.logger.error(f"Error in _fix_website_hosting: {e}")

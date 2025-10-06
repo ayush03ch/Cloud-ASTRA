@@ -79,7 +79,17 @@ class S3Agent:
             bucket_name = bucket["Name"]
             
             # Detect intent for this bucket
-            user_intent = user_intent_input.get(bucket_name) if user_intent_input else None
+            # Handle both bucket-specific and global user intent
+            user_intent = None
+            if user_intent_input:
+                # Check for bucket-specific intent first
+                user_intent = user_intent_input.get(bucket_name)
+                # If no bucket-specific intent, check for global intent
+                if not user_intent:
+                    user_intent = user_intent_input.get('_global_intent')
+            
+            print(f"🐛 DEBUG: user_intent for {bucket_name} = {user_intent}")
+            
             intent, confidence, reasoning = self.intent_detector.detect_intent(
                 bucket_name, self.client, user_intent
             )
@@ -105,7 +115,18 @@ class S3Agent:
                         # Adjust auto_safe based on intent
                         auto_safe = self._should_auto_apply(rule, intent, bucket_name)
                         
-                        findings.append({
+                        # Get fix instructions if available
+                        fix_instructions = getattr(rule, 'fix_instructions', None)
+                        can_auto_fix = getattr(rule, 'can_auto_fix', False)
+                        fix_type = getattr(rule, 'fix_type', None)
+                        
+                        # DEBUG: Log fix instruction details
+                        print(f"🐛 DEBUG: Rule {rule.id} - fix_instructions: {fix_instructions}")
+                        print(f"🐛 DEBUG: Rule {rule.id} - can_auto_fix: {can_auto_fix}")
+                        print(f"🐛 DEBUG: Rule {rule.id} - fix_type: {fix_type}")
+                        print(f"🐛 DEBUG: Rule {rule.id} - auto_safe: {auto_safe}")
+                        
+                        finding = {
                             "service": "s3",
                             "resource": bucket_name,
                             "issue": rule.detection,
@@ -116,7 +137,20 @@ class S3Agent:
                             "intent_confidence": confidence,
                             "intent_reasoning": reasoning,
                             "recommendations": recommendations
-                        })
+                        }
+                        
+                        # Add manual fix info if not auto-safe
+                        if not auto_safe and fix_instructions:
+                            print(f"🐛 DEBUG: Adding fix instructions to finding for {bucket_name}")
+                            finding.update({
+                                "fix_instructions": fix_instructions,
+                                "can_auto_fix": can_auto_fix,
+                                "fix_type": fix_type
+                            })
+                        else:
+                            print(f"🐛 DEBUG: NOT adding fix instructions - auto_safe: {auto_safe}, fix_instructions exists: {bool(fix_instructions)}")
+                        
+                        findings.append(finding)
                 except Exception as e:
                     findings.append({
                         "service": "s3",
@@ -196,13 +230,21 @@ class S3Agent:
         """
         from .intent_detector import S3Intent
         
+        # Intent conversion rule - always manual review first
+        if rule.id == "s3_intent_conversion":
+            print(f"⚠️ Intent conversion detected for {bucket_name} - requiring manual review")
+            return False  # Always manual review for intent conflicts
+        
         # Website hosting intent - be very careful with public access rules
         if intent == S3Intent.WEBSITE_HOSTING:
             if rule.id == "s3_public_access_block":
                 print(f"⚠️ Skipping auto-fix for public access on website bucket: {bucket_name}")
                 return False  # Don't auto-block public access for websites
             elif rule.id == "s3_website_hosting":
-                return True   # Do auto-fix website hosting issues
+                # Respect the rule's class setting for auto_safe
+                rule_auto_safe = getattr(rule, 'auto_safe', True)
+                print(f"🐛 DEBUG: Website hosting rule auto_safe setting: {rule_auto_safe}")
+                return rule_auto_safe
                 
         # Data storage intent - apply security rules
         elif intent in [S3Intent.DATA_STORAGE, S3Intent.DATA_ARCHIVAL, S3Intent.BACKUP_STORAGE]:

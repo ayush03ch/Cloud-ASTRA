@@ -6,6 +6,47 @@ class PublicAccessRule:
     id = "s3_public_access_block"
     detection = "Bucket allows public read access"
     auto_safe = True
+    
+    def __init__(self):
+        self.fix_instructions = None
+        self.can_auto_fix = True
+        self.fix_type = "public_access_block"
+    
+    def check_with_intent(self, client, bucket_name, intent, recommendations):
+        """Intent-aware public access check."""
+        from agents.s3_agent.intent_detector import S3Intent
+        
+        # For website hosting buckets, public access is expected
+        if intent == S3Intent.WEBSITE_HOSTING:
+            print(f"ℹ️ Skipping public access check for website bucket: {bucket_name}")
+            return False
+        
+        # For all other intents, check for unwanted public access
+        is_public = self.check(client, bucket_name)
+        
+        if is_public:
+            # Set detailed fix instructions based on intent
+            if intent == S3Intent.DATA_STORAGE:
+                self.fix_instructions = [
+                    "Enable Public Access Block to prevent all public access",
+                    "Remove any public bucket policies",
+                    "Set bucket ACL to private",
+                    "Consider enabling bucket encryption for sensitive data"
+                ]
+            else:
+                self.fix_instructions = [
+                    "Enable Public Access Block to prevent public access",
+                    "Remove any public bucket policies", 
+                    "Set bucket ACL to private",
+                    "Verify access is restricted to authorized users only"
+                ]
+            
+            self.can_auto_fix = True
+            self.fix_type = "public_access_block"
+            
+            print(f"🚨 Non-website bucket {bucket_name} has public access - this should be fixed")
+        
+        return is_public
 
     def check(self, client, bucket_name):
         """Check if bucket is publicly accessible via ACL or policy."""
