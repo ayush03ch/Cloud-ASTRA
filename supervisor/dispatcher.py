@@ -10,11 +10,11 @@ class Dispatcher:
     def __init__(self, creds):
         self.creds = creds
 
-    def dispatch(self):
+    def dispatch(self, user_intent_input=None):
         results = {}
-        # Run S3 Agent
+        # Run S3 Agent with intent input
         s3_agent = S3Agent(creds=self.creds)
-        results["s3"] = s3_agent.scan()
+        results["s3"] = s3_agent.scan(user_intent_input=user_intent_input)
 
         # In future: add EC2Agent, IAMAgent, etc.
         return results

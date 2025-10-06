@@ -23,13 +23,13 @@ class SupervisorAgent:
         logging.info(f"Assumed role: {self.role_arn}")
         return self.creds
 
-    def scan_and_fix(self):
+    def scan_and_fix(self, user_intent_input=None):
         """Run dispatcher scans and apply fixes with FixerAgent."""
         if not self.creds:
             raise RuntimeError("Must call assume() before scan_and_fix()")
 
         dispatcher = Dispatcher(self.creds)
-        findings = dispatcher.dispatch()
+        findings = dispatcher.dispatch(user_intent_input=user_intent_input)
         logging.info(f"Findings: {json.dumps(findings, indent=2)}")
 
         fixer = FixerAgent(self.creds)

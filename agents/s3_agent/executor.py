@@ -29,6 +29,11 @@ class S3Executor:
                 "action": "fix_public_access",
                 "params": {}
             }
+        elif rule_id == "s3_website_hosting":
+            return {
+                "action": "fix_website_hosting",
+                "params": {}
+            }
         else:
             return {
                 "action": "manual_review",

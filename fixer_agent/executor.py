@@ -56,6 +56,8 @@ class Executor:
                 # Handle custom actions
                 if action == "fix_public_access":
                     self._fix_public_access(finding["resource"])
+                elif action == "fix_website_hosting":
+                    self._fix_website_hosting(finding["resource"])
                 elif action == "manual_review":
                     self.logger.info(f"Fix requires manual review: {finding}")
                     return False  # Don't auto-apply manual reviews
@@ -123,3 +125,53 @@ class Executor:
         else:
             # All steps failed
             raise Exception(f"All fix attempts failed: {errors}")
+            
+    def _fix_website_hosting(self, bucket_name):
+        """Fix website hosting configuration."""
+        import json
+        
+        try:
+            # Step 1: Enable website hosting
+            self.s3_client.put_bucket_website(
+                Bucket=bucket_name,
+                WebsiteConfiguration={
+                    'IndexDocument': {'Suffix': 'index.html'},
+                    'ErrorDocument': {'Key': 'error.html'}
+                }
+            )
+            self.logger.info(f"✅ Enabled website hosting for {bucket_name}")
+            
+            # Step 2: Create public read policy for objects
+            policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": "*",
+                        "Action": "s3:GetObject",
+                        "Resource": f"arn:aws:s3:::{bucket_name}/*"
+                    }
+                ]
+            }
+            
+            self.s3_client.put_bucket_policy(
+                Bucket=bucket_name,
+                Policy=json.dumps(policy)
+            )
+            self.logger.info(f"✅ Added public read policy for {bucket_name}")
+            
+            # Step 3: Configure Public Access Block for website hosting
+            self.s3_client.put_public_access_block(
+                Bucket=bucket_name,
+                PublicAccessBlockConfiguration={
+                    'BlockPublicAcls': True,        # Block public ACLs (good security)
+                    'IgnorePublicAcls': True,       # Ignore public ACLs (good security)
+                    'BlockPublicPolicy': False,     # Allow public policy (needed for website)
+                    'RestrictPublicBuckets': False  # Allow this specific public policy
+                }
+            )
+            self.logger.info(f"✅ Configured Public Access Block for website hosting on {bucket_name}")
+            
+        except Exception as e:
+            self.logger.error(f"Error in _fix_website_hosting: {e}")
+            raise

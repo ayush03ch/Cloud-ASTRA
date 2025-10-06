@@ -9,6 +9,15 @@ if __name__ == "__main__":
 
     # Initialize supervisor
     supervisor = SupervisorAgent(role_arn, external_id, region)
+    
+    # Optional: User intent input
+    # Specify intent per bucket to guide the analysis
+    user_intent_input = {
+        # "my-website-bucket": "website hosting",
+        # "my-data-bucket": "data storage", 
+        # "my-archive-bucket": "archival"
+        # Leave empty for auto-detection
+    }
 
     # Step 1: Assume role
     creds = supervisor.assume()
@@ -16,8 +25,8 @@ if __name__ == "__main__":
     for k, v in creds.items():
         print(f"{k}: {v[:8]}...")  # print partially for safety
 
-    # Step 2: Run full scan + fix
-    results = supervisor.scan_and_fix()
+    # Step 2: Run intent-aware scan + fix
+    results = supervisor.scan_and_fix(user_intent_input=user_intent_input)
     print("\n=== Final Results ===")
     print(f"📋 Findings: {len(results['findings'].get('s3', []))} S3 issues found")
     print(f"✅ Auto-fixes applied: {len(results['auto_fixes_applied'])}")
