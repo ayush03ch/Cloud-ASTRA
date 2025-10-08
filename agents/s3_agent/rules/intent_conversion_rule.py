@@ -107,6 +107,10 @@ class IntentConversionRule:
         return False
 
     def fix(self, client, bucket_name):
-        """Fix method called by legacy fixer - delegates to executor."""
-        print(f"🔄 Intent conversion fix should be handled by executor: {bucket_name}")
-        return True
+        """Fix intent conversion by enabling website hosting configuration."""
+        print(f"🔄 Converting bucket to website hosting: {bucket_name}")
+        
+        # Delegate to website hosting rule for the actual fix
+        from .website_hosting_rule import WebsiteHostingRule
+        website_rule = WebsiteHostingRule()
+        return website_rule.fix(client, bucket_name)

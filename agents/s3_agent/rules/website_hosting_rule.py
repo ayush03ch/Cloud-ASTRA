@@ -9,13 +9,14 @@ class WebsiteHostingRule:
     """
     id = "s3_website_hosting"
     detection = "Static website hosting misconfiguration"
-    auto_safe = False  # Require user confirmation for index document changes
+    auto_safe = False  # Default to manual, but can be auto for high confidence cases
     
     def __init__(self):
         self.fix_instructions = None
         self.can_auto_fix = True
         self.fix_type = None
         self.html_analysis = None
+        self.intent_confidence = 0.0  # Store confidence for decision making
 
     def check(self, client, bucket_name):
         """
@@ -271,17 +272,33 @@ class WebsiteHostingRule:
                 self._apply_standard_website_fix(client, bucket_name)
                 return
             
-            # Handle different issue types
+            # Handle different issue types - order matters!
+            issues_handled = []
+            
             if "no_html_files" in issues:
                 self._handle_no_html_files(client, bucket_name)
-            elif "index_document_mismatch" in issues:
-                self._handle_index_mismatch(client, bucket_name, html_analysis)
-            elif "website_hosting_not_enabled" in issues:
+                issues_handled.append("no_html_files")
+            
+            # Enable website hosting first if needed
+            if "website_hosting_not_enabled" in issues:
                 self._handle_website_hosting_disabled(client, bucket_name, html_analysis)
-            elif "objects_not_public" in issues:
+                issues_handled.append("website_hosting_not_enabled")
+            
+            # Then fix index document mismatch (this might override the previous index setting)
+            if "index_document_mismatch" in issues:
+                self._handle_index_mismatch(client, bucket_name, html_analysis)
+                issues_handled.append("index_document_mismatch")
+            
+            # Finally ensure public access is set correctly
+            if "objects_not_public" in issues:
                 self._handle_objects_not_public(client, bucket_name)
-            else:
+                issues_handled.append("objects_not_public")
+            
+            if not issues_handled:
+                print(f"ℹ️ No specific issue handlers found, applying standard website hosting fix")
                 self._apply_standard_website_fix(client, bucket_name)
+            else:
+                print(f"✅ Handled issues: {issues_handled}")
                 
         except Exception as e:
             print(f"❌ Error fixing website hosting: {e}")
@@ -346,7 +363,7 @@ class WebsiteHostingRule:
                 'ErrorDocument': {'Key': 'error.html'}
             }
         )
-        print(f"✅ Enabled website hosting")
+        print(f"✅ Enabled website hosting with index: {suggested_index}")
         
         # Apply public access for website
         self._apply_website_public_access(client, bucket_name)
@@ -360,15 +377,21 @@ class WebsiteHostingRule:
         """Apply standard website hosting configuration."""
         print(f"🌐 Applying standard website hosting configuration")
         
+        # Detect the best index file to use
+        html_analysis = self._analyze_html_files_detailed(client, bucket_name, None)
+        index_file = html_analysis.get("suggested_index", "index.html")
+        
+        print(f"🔍 Detected index file: {index_file}")
+        
         # Enable website hosting
         client.put_bucket_website(
             Bucket=bucket_name,
             WebsiteConfiguration={
-                'IndexDocument': {'Suffix': 'index.html'},
+                'IndexDocument': {'Suffix': index_file},
                 'ErrorDocument': {'Key': 'error.html'}
             }
         )
-        print(f"✅ Enabled website hosting")
+        print(f"✅ Enabled website hosting with index: {index_file}")
         
         # Apply public access
         self._apply_website_public_access(client, bucket_name)

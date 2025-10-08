@@ -67,6 +67,7 @@ class IntentDetector:
         # Priority 1: Explicit user intent
         if user_intent:
             intent = self._parse_user_intent(user_intent)
+            print(f"🐛 DEBUG: Parsed user intent: {intent} (from '{user_intent}')")
             if intent != S3Intent.UNKNOWN:
                 print(f"✅ User specified intent: {intent.value}")
                 return intent, 1.0, "Explicitly specified by user"
@@ -88,6 +89,7 @@ class IntentDetector:
         """Parse explicit user intent input."""
         intent_mapping = {
             'website': S3Intent.WEBSITE_HOSTING,
+            'website hosting': S3Intent.WEBSITE_HOSTING,
             'static website': S3Intent.WEBSITE_HOSTING,
             'hosting': S3Intent.WEBSITE_HOSTING,
             'storage': S3Intent.DATA_STORAGE,
@@ -169,7 +171,9 @@ class IntentDetector:
             reasoning = "; ".join(evidence)
             return intent, normalized_confidence, reasoning
         
-        return S3Intent.UNKNOWN, 0.2, "No clear intent indicators found"
+        # If no clear intent indicators found, default to DATA_STORAGE
+        # This is safer for beginners than UNKNOWN
+        return S3Intent.DATA_STORAGE, 0.3, "No clear intent indicators found, defaulting to data storage for security"
 
     def _analyze_bucket_name(self, bucket_name: str) -> Tuple[S3Intent, float, str]:
         """Analyze bucket name for intent clues."""
@@ -244,7 +248,9 @@ class IntentDetector:
             return S3Intent.DATA_STORAGE, 0.5, f"Mixed file types suggest general storage: {list(file_types.keys())[:5]}"
             
         except Exception as e:
-            return S3Intent.UNKNOWN, 0.0, f"Error analyzing contents: {e}"
+            # If we can't analyze contents (empty bucket, permission issues, etc.)
+            # Default to DATA_STORAGE intent for safety
+            return S3Intent.DATA_STORAGE, 0.4, f"Unable to analyze contents, defaulting to data storage: {e}"
 
     def _analyze_storage_classes(self, client, bucket_name: str) -> Tuple[S3Intent, float, str]:
         """Analyze storage classes used in bucket."""

@@ -32,13 +32,37 @@ class SupervisorAgent:
         findings = dispatcher.dispatch(user_intent_input=user_intent_input)
         logging.info(f"Findings: {json.dumps(findings, indent=2)}")
 
+        # Count total issues found
+        total_findings = 0
+        auto_fixable_count = 0
+        
+        # Flatten and count findings
+        if isinstance(findings, dict):
+            for service, service_findings in findings.items():
+                if isinstance(service_findings, list):
+                    total_findings += len(service_findings)
+                    auto_fixable_count += sum(1 for f in service_findings if f.get("auto_safe", False))
+        
+        logging.info(f"Total findings: {total_findings}, Auto-fixable: {auto_fixable_count}")
+
+        # Apply fixes using FixerAgent
         fixer = FixerAgent(self.creds)
         applied_fixes, pending_fixes = fixer.apply(findings)
+
+        # Log the results
+        logging.info(f"Auto-fixes applied: {len(applied_fixes)}")
+        logging.info(f"Pending manual fixes: {len(pending_fixes)}")
 
         return {
             "findings": findings,
             "auto_fixes_applied": applied_fixes,
             "pending_fixes": pending_fixes,
+            "summary": {
+                "total_findings": total_findings,
+                "auto_fixable": auto_fixable_count,
+                "fixes_applied": len(applied_fixes),
+                "pending_manual": len(pending_fixes)
+            }
         }
 
     def apply_manual_fix(self, resource, fix_type):

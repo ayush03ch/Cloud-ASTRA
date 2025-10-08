@@ -307,11 +307,8 @@
                 <div class="form-group">
                     <label for="roleArn">Target Account IAM Role ARN:</label>
                     <input type="text" id="roleArn" name="roleArn" 
-                           value="arn:aws:iam::867344463195:role/S3AgentRole"  
-                           placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
-                    <!-- <input type="text" id="roleArn" name="roleArn" 
                            value=""  
-                           placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME"> -->
+                           placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
                     <div class="help-text">IAM role in the target AWS account that the agent will assume</div>
                 </div>
                 
@@ -541,6 +538,9 @@
                         <p><strong>Issues Found:</strong> ${result.findings_count || 0}</p>
                         <p><strong>Auto-fixes Applied:</strong> ${result.auto_fixes_applied?.length || 0}</p>
                         <p><strong>Manual Reviews Needed:</strong> ${result.pending_fixes?.length || 0}</p>
+                        ${result.auto_fix_summary?.success_rate ? `
+                            <p><strong>Auto-fix Success Rate:</strong> ${result.auto_fix_summary.success_rate.toFixed(1)}%</p>
+                        ` : ''}
                     </div>
                 `;
                 

@@ -58,6 +58,9 @@ class Executor:
                     self._fix_public_access(finding["resource"])
                 elif action == "fix_website_hosting":
                     self._fix_website_hosting(finding["resource"])
+                elif action == "rule_based_fix":
+                    # Let the original rule handle the fix
+                    self._apply_rule_fix(finding)
                 elif action == "manual_review":
                     self.logger.info(f"Fix requires manual review: {finding}")
                     return False  # Don't auto-apply manual reviews
@@ -75,6 +78,38 @@ class Executor:
                 time.sleep(1)  # small backoff
 
         return False
+    
+    def _apply_rule_fix(self, finding):
+        """Apply fix using the original rule's fix method."""
+        rule_id = finding.get("fix", {}).get("params", {}).get("rule_id")
+        bucket_name = finding.get("fix", {}).get("params", {}).get("bucket_name")
+        
+        # If bucket_name is empty, get it from the finding resource
+        if not bucket_name:
+            bucket_name = finding.get("resource")
+        
+        if not rule_id or not bucket_name:
+            raise Exception(f"Missing rule_id ({rule_id}) or bucket_name ({bucket_name}) for rule-based fix")
+        
+        # Import and instantiate the rule
+        if rule_id == "s3_unencrypted_bucket":
+            from agents.s3_agent.rules.encryption_rule import EncryptionRule
+            rule = EncryptionRule()
+            rule.fix(self.s3_client, bucket_name)
+        elif rule_id == "s3_public_access_block":
+            from agents.s3_agent.rules.public_access_rule import PublicAccessRule
+            rule = PublicAccessRule()
+            rule.fix(self.s3_client, bucket_name)
+        elif rule_id == "s3_website_hosting":
+            from agents.s3_agent.rules.website_hosting_rule import WebsiteHostingRule
+            rule = WebsiteHostingRule()
+            rule.fix(self.s3_client, bucket_name)
+        elif rule_id == "s3_intent_conversion":
+            from agents.s3_agent.rules.intent_conversion_rule import IntentConversionRule
+            rule = IntentConversionRule()
+            rule.fix(self.s3_client, bucket_name)
+        else:
+            raise Exception(f"Unknown rule_id for auto-fix: {rule_id}")
     
     def _fix_public_access(self, bucket_name):
         """Fix public access by enabling Public Access Block and making ACL private."""
@@ -139,11 +174,17 @@ class Executor:
     def fix_index_document_directly(self, bucket_name):
         """Directly fix index document configuration."""
         try:
+            print(f"🔧 Starting index document fix for {bucket_name}")
+            
             # Get current website configuration
             try:
                 website_config = self.s3_client.get_bucket_website(Bucket=bucket_name)
-            except Exception:
+                current_index = website_config.get('IndexDocument', {}).get('Suffix', '')
+                print(f"📋 Current index document: '{current_index}'")
+            except Exception as e:
+                print(f"❌ Could not get current website config: {e}")
                 website_config = {}
+                current_index = ""
             
             # List objects to find HTML files
             response = self.s3_client.list_objects_v2(Bucket=bucket_name, MaxKeys=100)
@@ -152,9 +193,11 @@ class Executor:
             # Find HTML files
             html_files = []
             for obj in objects:
-                key = obj['Key'].lower()
-                if key.endswith(('.html', '.htm')):
-                    html_files.append(obj['Key'])
+                key = obj['Key']
+                if key.lower().endswith(('.html', '.htm')):
+                    html_files.append(key)  # Keep original case
+            
+            print(f"📄 Found HTML files: {html_files}")
             
             # Determine best index file
             suggested_index = "index.html"  # default
@@ -168,7 +211,10 @@ class Executor:
                     # Use first HTML file found
                     suggested_index = html_files[0]
             
+            print(f"💡 Suggested index document: '{suggested_index}'")
+            
             # Update website configuration with correct index
+            print(f"🔄 Updating website configuration...")
             self.s3_client.put_bucket_website(
                 Bucket=bucket_name,
                 WebsiteConfiguration={
@@ -177,6 +223,8 @@ class Executor:
                 }
             )
             
+            print(f"✅ Successfully updated index document from '{current_index}' to '{suggested_index}' for {bucket_name}")
+            
             # Also apply proper website hosting configuration
             self._fix_website_hosting(bucket_name)
             
@@ -184,6 +232,7 @@ class Executor:
             return True
             
         except Exception as e:
+            print(f"❌ Failed to fix index document for {bucket_name}: {e}")
             self.logger.error(f"❌ Failed to fix index document for {bucket_name}: {e}")
             return False
     
@@ -266,56 +315,14 @@ class Executor:
             return False
             
     def _fix_website_hosting(self, bucket_name):
-        """Fix website hosting configuration with proper order."""
-        import json
-        
+        """Fix website hosting configuration using the proper rule."""
         try:
-            # STEP 1: Disable Public Access Block first (to allow public policy)
-            print(f"🔓 Step 1: Configuring Public Access Block for website: {bucket_name}")
-            self.s3_client.put_public_access_block(
-                Bucket=bucket_name,
-                PublicAccessBlockConfiguration={
-                    'BlockPublicAcls': True,        # Block public ACLs (good security)
-                    'IgnorePublicAcls': True,       # Ignore public ACLs (good security) 
-                    'BlockPublicPolicy': False,     # ALLOW public policy (needed for website)
-                    'RestrictPublicBuckets': False  # Allow this specific public policy
-                }
-            )
-            self.logger.info(f"✅ Configured Public Access Block for website hosting on {bucket_name}")
-            
-            # STEP 2: Enable website hosting (if not already enabled)
-            print(f"🌐 Step 2: Enabling website hosting for: {bucket_name}")
-            self.s3_client.put_bucket_website(
-                Bucket=bucket_name,
-                WebsiteConfiguration={
-                    'IndexDocument': {'Suffix': 'index.html'},
-                    'ErrorDocument': {'Key': 'error.html'}
-                }
-            )
-            self.logger.info(f"✅ Enabled website hosting for {bucket_name}")
-            
-            # STEP 3: Now apply the public read policy
-            print(f"📝 Step 3: Adding public read policy for website: {bucket_name}")
-            policy = {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Principal": "*",
-                        "Action": "s3:GetObject",
-                        "Resource": f"arn:aws:s3:::{bucket_name}/*"
-                    }
-                ]
-            }
-            
-            self.s3_client.put_bucket_policy(
-                Bucket=bucket_name,
-                Policy=json.dumps(policy)
-            )
-            self.logger.info(f"✅ Added public read policy for {bucket_name}")
-            
-            print(f"🎉 Website hosting successfully configured for: {bucket_name}")
+            # Use the website hosting rule which has proper analysis logic
+            from agents.s3_agent.rules.website_hosting_rule import WebsiteHostingRule
+            rule = WebsiteHostingRule()
+            rule.fix(self.s3_client, bucket_name)
+            self.logger.info(f"✅ Successfully applied website hosting fix using rule for {bucket_name}")
             
         except Exception as e:
-            self.logger.error(f"Error in _fix_website_hosting: {e}")
+            self.logger.error(f"❌ Failed to fix website hosting for {bucket_name}: {e}")
             raise

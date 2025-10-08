@@ -7,6 +7,7 @@ import logging
 # Add parent directory to path so we can import our modules
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
+# Force reload for debugging intent detection
 from supervisor.supervisor_agent import SupervisorAgent
 
 app = Flask(__name__)
@@ -97,22 +98,42 @@ def api_scan():
             # Process results for web interface
             response = {
                 "success": True,
+                "summary": results.get('summary', {}),
                 "findings_count": len(results.get('findings', {}).get('s3', [])),
                 "auto_fixes_applied": results.get('auto_fixes_applied', []),
                 "pending_fixes": results.get('pending_fixes', []),
-                "intent_decisions": []
+                "intent_decisions": [],
+                "auto_fix_summary": {
+                    "total_auto_fixed": len(results.get('auto_fixes_applied', [])),
+                    "total_pending": len(results.get('pending_fixes', [])),
+                    "success_rate": 0
+                }
             }
             
-            # Extract intent decisions from findings
+            # Calculate success rate for auto-fixes
+            applied_fixes = results.get('auto_fixes_applied', [])
+            if applied_fixes:
+                successful_fixes = sum(1 for fix in applied_fixes if fix.get('status') == 'applied')
+                response["auto_fix_summary"]["success_rate"] = (successful_fixes / len(applied_fixes)) * 100
+            
+            # Extract intent decisions from findings (deduplicated by bucket)
             s3_findings = results.get('findings', {}).get('s3', [])
+            intent_decisions_dict = {}  # Use dict to deduplicate by bucket name
+            
             for finding in s3_findings:
                 if finding.get('intent'):
-                    response["intent_decisions"].append({
-                        "bucket": finding.get('resource'),
-                        "intent": finding.get('intent'),
-                        "confidence": f"{finding.get('intent_confidence', 0):.2f}",
-                        "reasoning": finding.get('intent_reasoning', 'No reasoning available')
-                    })
+                    bucket_name = finding.get('resource')
+                    # Only add if we haven't seen this bucket before
+                    if bucket_name not in intent_decisions_dict:
+                        intent_decisions_dict[bucket_name] = {
+                            "bucket": bucket_name,
+                            "intent": finding.get('intent'),
+                            "confidence": f"{finding.get('intent_confidence', 0):.2f}",
+                            "reasoning": finding.get('intent_reasoning', 'No reasoning available')
+                        }
+            
+            # Convert dict values to list for response
+            response["intent_decisions"] = list(intent_decisions_dict.values())
             
             app.logger.info(f"Scan completed successfully. Found {response['findings_count']} issues")
             return jsonify(response)
