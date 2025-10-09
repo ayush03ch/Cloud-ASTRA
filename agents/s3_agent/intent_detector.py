@@ -59,29 +59,29 @@ class IntentDetector:
         Returns:
             Tuple of (Intent, Confidence 0-1, Reasoning)
         """
-        print(f"🎯 Detecting intent for bucket: {bucket_name}")
+        print(f" Detecting intent for bucket: {bucket_name}")
         
         # DEBUG: Show what user intent was received
-        print(f"🐛 DEBUG: user_intent parameter = {user_intent}")
+        print(f" DEBUG: user_intent parameter = {user_intent}")
         
         # Priority 1: Explicit user intent
         if user_intent:
             intent = self._parse_user_intent(user_intent)
-            print(f"🐛 DEBUG: Parsed user intent: {intent} (from '{user_intent}')")
+            print(f" DEBUG: Parsed user intent: {intent} (from '{user_intent}')")
             if intent != S3Intent.UNKNOWN:
-                print(f"✅ User specified intent: {intent.value}")
+                print(f" User specified intent: {intent.value}")
                 return intent, 1.0, "Explicitly specified by user"
         
         # Priority 2: User description analysis
         if user_description:
             intent, confidence, reasoning = self._analyze_user_description(user_description)
             if confidence > 0.7:
-                print(f"📝 Intent from description: {intent.value} (confidence: {confidence})")
+                print(f" Intent from description: {intent.value} (confidence: {confidence})")
                 return intent, confidence, reasoning
         
         # Priority 3: Automatic detection
         auto_intent, auto_confidence, auto_reasoning = self._auto_detect_intent(bucket_name, client)
-        print(f"🤖 Auto-detected intent: {auto_intent.value} (confidence: {auto_confidence})")
+        print(f" Auto-detected intent: {auto_intent.value} (confidence: {auto_confidence})")
         
         return auto_intent, auto_confidence, auto_reasoning
 

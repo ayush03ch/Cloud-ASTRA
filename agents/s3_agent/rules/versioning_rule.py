@@ -3,17 +3,17 @@
 class VersioningRule:
     id = "s3_versioning_disabled"
     detection = "Bucket versioning is not enabled"
-    auto_safe = False  # Manual only - versioning can incur storage costs
+    auto_safe = False  # Manual only, versioning incur storage costs
     
     def __init__(self):
         self.fix_instructions = [
-            "⚠️ COST CONSIDERATION: Versioning stores multiple copies of objects and may increase storage costs",
+            " COST CONSIDERATION: Versioning stores multiple copies of objects and may increase storage costs",
             "Enable S3 bucket versioning for data protection (optional)",
             "Protects against accidental deletions and modifications",
             "Maintains object history for compliance requirements",
             "Consider lifecycle policies to manage old versions and costs"
         ]
-        self.can_auto_fix = False  # Never auto-fix due to cost implications
+        self.can_auto_fix = False  # Never auto-fix , incurr cost 
         self.fix_type = "enable_versioning_manual"
 
     def check(self, client, bucket_name):
@@ -23,7 +23,7 @@ class VersioningRule:
             status = response.get('Status', 'Disabled')
             
             if status != 'Enabled':
-                print(f"❌ Bucket {bucket_name} versioning is {status}")
+                print(f" Bucket {bucket_name} versioning is {status}")
                 return True
                 
             return False
@@ -39,10 +39,10 @@ class VersioningRule:
         if intent in [S3Intent.DATA_STORAGE, S3Intent.BACKUP_STORAGE, S3Intent.DATA_ARCHIVAL]:
             return self.check(client, bucket_name)
         
-        # For website hosting, versioning is optional but good practice
+        # For website hosting, versioning  optional 
         if intent == S3Intent.WEBSITE_HOSTING:
             if self.check(client, bucket_name):
-                # Lower priority for websites
+                # Low priority for websites
                 self.fix_instructions = [
                     "Consider enabling versioning for website hosting",
                     "Protects against accidental file overwrites",

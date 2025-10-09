@@ -16,16 +16,16 @@ class PublicAccessRule:
         """Intent-aware public access check."""
         from agents.s3_agent.intent_detector import S3Intent
         
-        # For website hosting buckets, public access is expected
+        # For website hosting buckets, public access is must
         if intent == S3Intent.WEBSITE_HOSTING:
-            print(f"ℹ️ Skipping public access check for website bucket: {bucket_name}")
+            print(f" Skipping public access check for website bucket: {bucket_name}")
             return False
         
-        # For all other intents, check for unwanted public access
+        # For all other intents, check unwanted public access
         is_public = self.check(client, bucket_name)
         
         if is_public:
-            # Set detailed fix instructions based on intent
+            # detailed fix instructions based on intent
             if intent == S3Intent.DATA_STORAGE:
                 self.fix_instructions = [
                     "Enable Public Access Block to prevent all public access",
@@ -51,7 +51,7 @@ class PublicAccessRule:
     def check(self, client, bucket_name):
         """Check if bucket is publicly accessible via ACL or policy."""
         try:
-            print(f"🔍 Checking bucket: {bucket_name}")
+            print(f"Checking bucket: {bucket_name}")
 
             # Check 1: Bucket ACL
             if self._check_public_acl(client, bucket_name):
@@ -77,7 +77,7 @@ class PublicAccessRule:
             response = client.get_bucket_policy(Bucket=bucket_name)
             policy = json.loads(response['Policy'])
 
-            print(f"📋 Bucket Policy: {policy}")
+            print(f" Bucket Policy: {policy}")
 
             for statement in policy.get('Statement', []):
                 principal = statement.get('Principal')
@@ -86,14 +86,14 @@ class PublicAccessRule:
                 # Check for public principal with Allow effect
                 if effect == 'Allow':
                     if principal == '*' or principal == {"AWS": "*"}:
-                        print(f"🚨 Found public bucket policy")
+                        print(f" Found public bucket policy")
                         return True
 
             return False
         except Exception as e:
             # Check if it's a NoSuchBucketPolicy error by examining the error code
             if hasattr(e, 'response') and e.response.get('Error', {}).get('Code') == 'NoSuchBucketPolicy':
-                print("ℹ️ No bucket policy found")
+                print(" No bucket policy found")
                 return False
             else:
                 print(f"❌ Error checking policy: {e}")
@@ -110,7 +110,7 @@ class PublicAccessRule:
                 if grantee.get("Type") == "Group" and permission in ["READ", "READ_ACP", "FULL_CONTROL"]:
                     uri = grantee.get("URI", "")
                     if "AllUsers" in uri or "AuthenticatedUsers" in uri:
-                        print(f"🚨 Found public ACL: {permission} to {uri}")
+                        print(f" Found public ACL: {permission} to {uri}")
                         return True
             return False
         except:
@@ -122,7 +122,7 @@ class PublicAccessRule:
             response = client.get_public_access_block(Bucket=bucket_name)
             config = response["PublicAccessBlockConfiguration"]
             
-            print(f"📋 Public Access Block Config: {config}")
+            print(f" Public Access Block Config: {config}")
             
             # If any of these are False, bucket could be public
             if not all([
@@ -131,7 +131,7 @@ class PublicAccessRule:
                 config.get("BlockPublicPolicy", True),
                 config.get("RestrictPublicBuckets", True)
             ]):
-                print(f"🚨 Public Access Block not fully enabled")
+                print(f" Public Access Block not fully enabled")
                 return True
             return False
         except Exception as e:
@@ -141,7 +141,7 @@ class PublicAccessRule:
                 return True
             elif hasattr(e, 'response') and e.response.get('Error', {}).get('Code') == 'AccessDenied':
                 print(f"⚠️ Cannot check Public Access Block (no permissions) - assuming potentially public")
-                return True  # Conservative approach: if we can't check, assume it might be public
+                return True  # if nothing found, assume public
             else:
                 print(f"❌ Error checking PAB: {e}")
                 return False
@@ -152,12 +152,12 @@ class PublicAccessRule:
             # Remove bucket policy if it exists
             try:
                 client.delete_bucket_policy(Bucket=bucket_name)
-                print(f"🗑️ Removed public bucket policy")
+                print(f" Removed public bucket policy")
             except Exception as e:
                 if hasattr(e, 'response') and e.response.get('Error', {}).get('Code') == 'NoSuchBucketPolicy':
-                    print("ℹ️ No bucket policy to remove")
+                    print(" No bucket policy to remove")
                 else:
-                    print(f"⚠️ Error removing policy: {e}")
+                    print(f" Error removing policy: {e}")
                 
             # Enable Public Access Block
             client.put_public_access_block(

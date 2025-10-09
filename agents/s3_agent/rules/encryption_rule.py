@@ -7,7 +7,7 @@ class EncryptionRule:
     
     def __init__(self):
         self.fix_instructions = [
-            "✅ FREE: Enable AES-256 server-side encryption (no additional cost)",
+            " FREE: Enable AES-256 server-side encryption (no additional cost)",
             "Set default encryption for all new objects",
             "Apply bucket key for cost optimization (recommended)"
         ]
@@ -21,7 +21,7 @@ class EncryptionRule:
             return False  # Encryption exists
         except client.exceptions.ClientError as e:
             if "ServerSideEncryptionConfigurationNotFoundError" in str(e):
-                print(f"❌ Bucket {bucket_name} has no default encryption")
+                print(f" Bucket {bucket_name} has no default encryption")
                 return True
             raise
 
@@ -41,4 +41,4 @@ class EncryptionRule:
                 ]
             }
         )
-        print(f"✅ Successfully enabled encryption for bucket: {bucket_name}")
+        print(f" Successfully enabled encryption for bucket: {bucket_name}")
