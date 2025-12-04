@@ -292,6 +292,42 @@
             width: auto;
             margin: 0;
         }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        
+        .tab-button {
+            padding: 15px 25px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s;
+        }
+        
+        .tab-button:hover {
+            color: #667eea;
+        }
+        
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -301,112 +337,216 @@
             <p>Intent-Aware AWS Security Scanner & Auto-Remediation</p>
         </div>
         
-        <form id="scanForm">
-            <div class="form-section">
-                <h3>🔐 AWS Configuration</h3>
-                <div class="form-group">
-                    <label for="roleArn">Target Account IAM Role ARN:</label>
-                    <input type="text" id="roleArn" name="roleArn" 
-                           value=""  
-                           placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
-                    <div class="help-text">IAM role in the target AWS account that the agent will assume</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="externalId">External ID:</label>
-                    <input type="text" id="externalId" name="externalId" 
-                           value="my-s3-agent-2025" 
-                           placeholder="External ID for role assumption">
-                    <!-- <input type="text" id="externalId" name="externalId" 
-                           value="" 
-                           placeholder="External ID for role assumption"> -->
-                    <div class="help-text">Additional security measure for cross-account role assumption</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="region">AWS Region:</label>
-                    <select id="region" name="region">
-                        <option value="us-east-1" selected>US East (N. Virginia)</option>
-                        <option value="us-west-2">US West (Oregon)</option>
-                        <option value="eu-west-1">Europe (Ireland)</option>
-                        <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <h3>🎯 Bucket Intent Configuration</h3>
-                <p style="margin-bottom: 20px; color: #666;">
-                    Specify the intended purpose for each bucket to guide intelligent fixes:
-                </p>
-                
-                <div id="intentMappings">
-                    <div class="intent-item">
-                        <input type="text" placeholder="Bucket name (e.g., my-website-bucket)" 
-                               name="bucketName[]" style="flex: 1.2;">
-                        <select name="bucketIntent[]" style="flex: 1;">
-                            <option value="">Auto-detect</option>
-                            <option value="website hosting">🌐 Website Hosting</option>
-                            <option value="data storage">📦 Data Storage</option>
-                            <option value="data archival">🗄️ Data Archival</option>
-                            <option value="backup storage">💾 Backup Storage</option>
-                            <option value="log storage">📊 Log Storage</option>
+        <div class="tabs">
+            <button type="button" class="tab-button active" onclick="switchTab('s3')">
+                📦 S3 Agent
+            </button>
+            <button type="button" class="tab-button" onclick="switchTab('lambda')">
+                ⚡ Lambda Agent
+            </button>
+        </div>
+        
+        <!-- S3 Agent Tab -->
+        <div id="s3-tab" class="tab-content active">
+            <form id="s3ScanForm">
+                <div class="form-section">
+                    <h3>🔐 AWS Configuration</h3>
+                    <div class="form-group">
+                        <label for="s3RoleArn">Target Account IAM Role ARN:</label>
+                        <input type="text" id="s3RoleArn" name="roleArn" 
+                               value=""  
+                               placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                        <div class="help-text">IAM role in the target AWS account that the agent will assume</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="s3ExternalId">External ID:</label>
+                        <input type="text" id="s3ExternalId" name="externalId" 
+                               value="my-s3-agent-2025" 
+                               placeholder="External ID for role assumption">
+                        <div class="help-text">Additional security measure for cross-account role assumption</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="s3Region">AWS Region:</label>
+                        <select id="s3Region" name="region">
+                            <option value="us-east-1" selected>US East (N. Virginia)</option>
+                            <option value="us-west-2">US West (Oregon)</option>
+                            <option value="eu-west-1">Europe (Ireland)</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
                         </select>
-                        <button type="button" class="remove-intent-btn" onclick="removeIntent(this)" 
-                                style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
                     </div>
                 </div>
                 
-                <button type="button" class="add-intent-btn" onclick="addIntentMapping()">
-                    ➕ Add Bucket Intent
-                </button>
-                
-                <div class="help-text" style="margin-top: 15px;">
-                    💡 <strong>Smart Intent Detection:</strong> Leave intent as "Auto-detect" to let the system analyze bucket configuration, 
-                    contents, and naming patterns to determine purpose automatically.
+                <div class="form-section">
+                    <h3>🎯 Bucket Intent Configuration</h3>
+                    <p style="margin-bottom: 20px; color: #666;">
+                        Specify the intended purpose for each bucket to guide intelligent fixes:
+                    </p>
+                    
+                    <div id="s3IntentMappings">
+                        <div class="intent-item">
+                            <input type="text" placeholder="Bucket name (e.g., my-website-bucket)" 
+                                   name="bucketName[]" style="flex: 1.2;">
+                            <select name="bucketIntent[]" style="flex: 1;">
+                                <option value="">Auto-detect</option>
+                                <option value="website hosting">🌐 Website Hosting</option>
+                                <option value="data storage">📦 Data Storage</option>
+                                <option value="data archival">🗄️ Data Archival</option>
+                                <option value="backup storage">💾 Backup Storage</option>
+                                <option value="log storage">📊 Log Storage</option>
+                            </select>
+                            <button type="button" class="remove-intent-btn" onclick="removeS3Intent(this)" 
+                                    style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="add-intent-btn" onclick="addS3IntentMapping()">
+                        ➕ Add Bucket Intent
+                    </button>
+                    
+                    <div class="help-text" style="margin-top: 15px;">
+                        💡 <strong>Smart Intent Detection:</strong> Leave intent as "Auto-detect" to let the system analyze bucket configuration, 
+                        contents, and naming patterns to determine purpose automatically.
+                    </div>
                 </div>
-            </div>
-            
-            <div class="form-section">
-                <h3>⚙️ Scan Options</h3>
                 
-                <div class="checkbox-group">
-                    <input type="checkbox" id="allowConversion" name="allowConversion" checked>
-                    <label for="allowConversion" style="margin: 0;">
-                        🔄 Allow bucket purpose conversion (e.g., website → data storage if no HTML files)
-                    </label>
+                <div class="form-section">
+                    <h3>⚙️ Scan Options</h3>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="s3AllowConversion" name="allowConversion" checked>
+                        <label for="s3AllowConversion" style="margin: 0;">
+                            🔄 Allow bucket purpose conversion (e.g., website → data storage if no HTML files)
+                        </label>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="s3AutoFix" name="autoFix" checked>
+                        <label for="s3AutoFix" style="margin: 0;">
+                            🔧 Enable automatic fixes for safe security issues
+                        </label>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="s3DetailedLogging" name="detailedLogging">
+                        <label for="s3DetailedLogging" style="margin: 0;">
+                            📝 Enable detailed logging and reasoning output
+                        </label>
+                    </div>
                 </div>
                 
-                <div class="checkbox-group">
-                    <input type="checkbox" id="autoFix" name="autoFix" checked>
-                    <label for="autoFix" style="margin: 0;">
-                        🔧 Enable automatic fixes for safe security issues
-                    </label>
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-primary">
+                        🚀 Start S3 Security Scan
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearS3Form()">
+                        🧹 Clear Form
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Lambda Agent Tab -->
+        <div id="lambda-tab" class="tab-content">
+            <form id="lambdaScanForm">
+                <div class="form-section">
+                    <h3>🔐 AWS Configuration</h3>
+                    <div class="form-group">
+                        <label for="lambdaRoleArn">Target Account IAM Role ARN:</label>
+                        <input type="text" id="lambdaRoleArn" name="roleArn" 
+                               value=""  
+                               placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                        <div class="help-text">IAM role in the target AWS account that the agent will assume</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lambdaExternalId">External ID:</label>
+                        <input type="text" id="lambdaExternalId" name="externalId" 
+                               value="my-s3-agent-2025" 
+                               placeholder="External ID for role assumption">
+                        <div class="help-text">Additional security measure for cross-account role assumption</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lambdaRegion">AWS Region:</label>
+                        <select id="lambdaRegion" name="region">
+                            <option value="us-east-1" selected>US East (N. Virginia)</option>
+                            <option value="us-west-2">US West (Oregon)</option>
+                            <option value="eu-west-1">Europe (Ireland)</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                        </select>
+                    </div>
                 </div>
                 
-                <div class="checkbox-group">
-                    <input type="checkbox" id="detailedLogging" name="detailedLogging">
-                    <label for="detailedLogging" style="margin: 0;">
-                        📝 Enable detailed logging and reasoning output
-                    </label>
+                <div class="form-section">
+                    <h3>⚡ Lambda Function Intent Configuration</h3>
+                    <p style="margin-bottom: 20px; color: #666;">
+                        Specify the intended purpose for each Lambda function to guide intelligent fixes:
+                    </p>
+                    
+                    <div id="lambdaIntentMappings">
+                        <div class="intent-item">
+                            <input type="text" placeholder="Function name (e.g., my-api-handler)" 
+                                   name="functionName[]" style="flex: 1.2;">
+                            <select name="functionIntent[]" style="flex: 1;">
+                                <option value="">Auto-detect</option>
+                                <option value="api_endpoint">🔌 API Endpoint</option>
+                                <option value="scheduled_task">⏰ Scheduled Task</option>
+                                <option value="event_processor">📨 Event Processor</option>
+                                <option value="stream_processor">🌊 Stream Processor</option>
+                                <option value="notification_handler">🔔 Notification Handler</option>
+                                <option value="data_transformation">🔄 Data Transformation</option>
+                            </select>
+                            <button type="button" class="remove-intent-btn" onclick="removeLambdaIntent(this)" 
+                                    style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="add-intent-btn" onclick="addLambdaIntentMapping()">
+                        ➕ Add Function Intent
+                    </button>
+                    
+                    <div class="help-text" style="margin-top: 15px;">
+                        💡 <strong>Smart Intent Detection:</strong> Leave intent as "Auto-detect" to let the system analyze function configuration, 
+                        environment variables, and naming patterns to determine purpose automatically.
+                    </div>
                 </div>
-            </div>
-            
-            <div class="action-buttons">
-                <button type="submit" class="btn btn-primary">
-                    🚀 Start Security Scan
-                </button>
-                <button type="button" class="btn btn-secondary" onclick="clearForm()">
-                    🧹 Clear Form
-                </button>
-            </div>
-        </form>
+                
+                <div class="form-section">
+                    <h3>⚙️ Scan Options</h3>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="lambdaAutoFix" name="autoFix" checked>
+                        <label for="lambdaAutoFix" style="margin: 0;">
+                            🔧 Enable automatic fixes for safe security issues
+                        </label>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="lambdaDetailedLogging" name="detailedLogging">
+                        <label for="lambdaDetailedLogging" style="margin: 0;">
+                            📝 Enable detailed logging and reasoning output
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-primary">
+                        🚀 Start Lambda Security Scan
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearLambdaForm()">
+                        🧹 Clear Form
+                    </button>
+                </div>
+            </form>
+        </div>
         
         <div class="loading" id="loading">
             <div class="spinner"></div>
             <p>Scanning AWS account and applying intelligent fixes...</p>
             <p style="color: #666; font-size: 14px; margin-top: 10px;">
-                This may take a few moments while we analyze your buckets and apply context-aware security fixes.
+                This may take a few moments while we analyze your resources and apply context-aware fixes.
             </p>
         </div>
         
@@ -417,8 +557,28 @@
     </div>
     
     <script>
-        function addIntentMapping() {
-            const container = document.getElementById('intentMappings');
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.getElementById('s3-tab').classList.remove('active');
+            document.getElementById('lambda-tab').classList.remove('active');
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected tab
+            if (tabName === 's3') {
+                document.getElementById('s3-tab').classList.add('active');
+                event.target.classList.add('active');
+            } else if (tabName === 'lambda') {
+                document.getElementById('lambda-tab').classList.add('active');
+                event.target.classList.add('active');
+            }
+        }
+        
+        // S3 Functions
+        function addS3IntentMapping() {
+            const container = document.getElementById('s3IntentMappings');
             const newItem = document.createElement('div');
             newItem.className = 'intent-item';
             newItem.innerHTML = `
@@ -431,25 +591,24 @@
                     <option value="backup storage">💾 Backup Storage</option>
                     <option value="log storage">📊 Log Storage</option>
                 </select>
-                <button type="button" class="remove-intent-btn" onclick="removeIntent(this)" 
+                <button type="button" class="remove-intent-btn" onclick="removeS3Intent(this)" 
                         style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
             `;
             container.appendChild(newItem);
         }
         
-        function removeIntent(button) {
-            const container = document.getElementById('intentMappings');
+        function removeS3Intent(button) {
+            const container = document.getElementById('s3IntentMappings');
             if (container.children.length > 1) {
                 button.parentElement.remove();
             }
         }
         
-        function clearForm() {
-            document.getElementById('scanForm').reset();
+        function clearS3Form() {
+            document.getElementById('s3ScanForm').reset();
             document.getElementById('results').classList.remove('show');
             
-            // Reset intent mappings to one item
-            const container = document.getElementById('intentMappings');
+            const container = document.getElementById('s3IntentMappings');
             container.innerHTML = `
                 <div class="intent-item">
                     <input type="text" placeholder="Bucket name (e.g., my-website-bucket)" 
@@ -462,64 +621,66 @@
                         <option value="backup storage">💾 Backup Storage</option>
                         <option value="log storage">📊 Log Storage</option>
                     </select>
-                    <button type="button" class="remove-intent-btn" onclick="removeIntent(this)" 
+                    <button type="button" class="remove-intent-btn" onclick="removeS3Intent(this)" 
                             style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
                 </div>
             `;
         }
         
-        document.getElementById('scanForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // Show loading
-            document.getElementById('loading').classList.add('show');
+        // Lambda Functions
+        function addLambdaIntentMapping() {
+            const container = document.getElementById('lambdaIntentMappings');
+            const newItem = document.createElement('div');
+            newItem.className = 'intent-item';
+            newItem.innerHTML = `
+                <input type="text" placeholder="Function name" name="functionName[]" style="flex: 1.2;">
+                <select name="functionIntent[]" style="flex: 1;">
+                    <option value="">Auto-detect</option>
+                    <option value="api_endpoint">🔌 API Endpoint</option>
+                    <option value="scheduled_task">⏰ Scheduled Task</option>
+                    <option value="event_processor">📨 Event Processor</option>
+                    <option value="stream_processor">🌊 Stream Processor</option>
+                    <option value="notification_handler">🔔 Notification Handler</option>
+                    <option value="data_transformation">🔄 Data Transformation</option>
+                </select>
+                <button type="button" class="remove-intent-btn" onclick="removeLambdaIntent(this)" 
+                        style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
+            `;
+            container.appendChild(newItem);
+        }
+        
+        function removeLambdaIntent(button) {
+            const container = document.getElementById('lambdaIntentMappings');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+            }
+        }
+        
+        function clearLambdaForm() {
+            document.getElementById('lambdaScanForm').reset();
             document.getElementById('results').classList.remove('show');
             
-            // Collect form data
-            const formData = new FormData(e.target);
-            const data = {
-                role_arn: formData.get('roleArn'),
-                external_id: formData.get('externalId'),
-                region: formData.get('region'),
-                allow_conversion: formData.get('allowConversion') === 'on',
-                auto_fix: formData.get('autoFix') === 'on',
-                detailed_logging: formData.get('detailedLogging') === 'on',
-                user_intent_input: {}
-            };
-            
-            // Collect bucket intents
-            const bucketNames = formData.getAll('bucketName[]');
-            const bucketIntents = formData.getAll('bucketIntent[]');
-            
-            for (let i = 0; i < bucketNames.length; i++) {
-                if (bucketNames[i].trim() && bucketIntents[i]) {
-                    data.user_intent_input[bucketNames[i].trim()] = bucketIntents[i];
-                }
-            }
-            
-            try {
-                const response = await fetch('/api/scan', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
-                
-                // Hide loading
-                document.getElementById('loading').classList.remove('show');
-                
-                // Show results
-                displayResults(result);
-                
-            } catch (error) {
-                document.getElementById('loading').classList.remove('show');
-                displayError('Connection failed. Make sure the backend server is running.');
-            }
-        });
+            const container = document.getElementById('lambdaIntentMappings');
+            container.innerHTML = `
+                <div class="intent-item">
+                    <input type="text" placeholder="Function name (e.g., my-api-handler)" 
+                           name="functionName[]" style="flex: 1.2;">
+                    <select name="functionIntent[]" style="flex: 1;">
+                        <option value="">Auto-detect</option>
+                        <option value="api_endpoint">🔌 API Endpoint</option>
+                        <option value="scheduled_task">⏰ Scheduled Task</option>
+                        <option value="event_processor">📨 Event Processor</option>
+                        <option value="stream_processor">🌊 Stream Processor</option>
+                        <option value="notification_handler">🔔 Notification Handler</option>
+                        <option value="data_transformation">🔄 Data Transformation</option>
+                    </select>
+                    <button type="button" class="remove-intent-btn" onclick="removeLambdaIntent(this)" 
+                            style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
+                </div>
+            `;
+        }
         
+        // Shared functions
         function displayResults(result) {
             const resultsContent = document.getElementById('resultsContent');
             const results = document.getElementById('results');
@@ -586,7 +747,7 @@
                         <div class="result-item">
                             <h4>🎯 Intent Detection Results</h4>
                             ${result.intent_decisions.map(decision => `
-                                <p>• <strong>${decision.bucket}:</strong> ${decision.intent} (confidence: ${decision.confidence})</p>
+                                <p>• <strong>${decision.bucket || decision.function}:</strong> ${decision.intent} (confidence: ${decision.confidence})</p>
                                 <p style="margin-left: 20px; color: #666; font-size: 0.9em;">${decision.reasoning}</p>
                             `).join('')}
                         </div>
@@ -626,10 +787,21 @@
             button.textContent = '🔄 Applying Fix...';
             
             try {
-                // Get current form data
-                const roleArn = document.getElementById('roleArn').value;
-                const externalId = document.getElementById('externalId').value;
-                const region = document.getElementById('region').value;
+                // Determine which form is active
+                const s3Form = document.getElementById('s3ScanForm');
+                const lambdaForm = document.getElementById('lambdaScanForm');
+                const activeTab = document.getElementById('s3-tab').classList.contains('active') ? 's3' : 'lambda';
+                
+                let roleArn, externalId, region;
+                if (activeTab === 's3') {
+                    roleArn = document.getElementById('s3RoleArn').value;
+                    externalId = document.getElementById('s3ExternalId').value;
+                    region = document.getElementById('s3Region').value;
+                } else {
+                    roleArn = document.getElementById('lambdaRoleArn').value;
+                    externalId = document.getElementById('lambdaExternalId').value;
+                    region = document.getElementById('lambdaRegion').value;
+                }
                 
                 // Send fix request
                 const response = await fetch('/api/apply-manual-fix', {
@@ -642,7 +814,8 @@
                         external_id: externalId,
                         region: region,
                         resource: resource,
-                        fix_type: fixType
+                        fix_type: fixType,
+                        service: activeTab
                     })
                 });
                 
@@ -676,6 +849,113 @@
                 fixItem.appendChild(errorMsg);
             }
         }
+        
+        // S3 Form submission
+        document.getElementById('s3ScanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+            
+            // Collect form data
+            const formData = new FormData(e.target);
+            const data = {
+                service: 's3',
+                role_arn: formData.get('roleArn'),
+                external_id: formData.get('externalId'),
+                region: formData.get('region'),
+                allow_conversion: formData.get('allowConversion') === 'on',
+                auto_fix: formData.get('autoFix') === 'on',
+                detailed_logging: formData.get('detailedLogging') === 'on',
+                user_intent_input: {}
+            };
+            
+            // Collect bucket intents
+            const bucketNames = formData.getAll('bucketName[]');
+            const bucketIntents = formData.getAll('bucketIntent[]');
+            
+            for (let i = 0; i < bucketNames.length; i++) {
+                if (bucketNames[i].trim() && bucketIntents[i]) {
+                    data.user_intent_input[bucketNames[i].trim()] = bucketIntents[i];
+                }
+            }
+            
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                // Hide loading
+                document.getElementById('loading').classList.remove('show');
+                
+                // Show results
+                displayResults(result);
+                
+            } catch (error) {
+                document.getElementById('loading').classList.remove('show');
+                displayError('Connection failed. Make sure the backend server is running.');
+            }
+        });
+        
+        // Lambda Form submission
+        document.getElementById('lambdaScanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+            
+            // Collect form data
+            const formData = new FormData(e.target);
+            const data = {
+                service: 'lambda',
+                role_arn: formData.get('roleArn'),
+                external_id: formData.get('externalId'),
+                region: formData.get('region'),
+                auto_fix: formData.get('autoFix') === 'on',
+                detailed_logging: formData.get('detailedLogging') === 'on',
+                user_intent_input: {}
+            };
+            
+            // Collect function intents
+            const functionNames = formData.getAll('functionName[]');
+            const functionIntents = formData.getAll('functionIntent[]');
+            
+            for (let i = 0; i < functionNames.length; i++) {
+                if (functionNames[i].trim() && functionIntents[i]) {
+                    data.user_intent_input[functionNames[i].trim()] = functionIntents[i];
+                }
+            }
+            
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                // Hide loading
+                document.getElementById('loading').classList.remove('show');
+                
+                // Show results
+                displayResults(result);
+                
+            } catch (error) {
+                document.getElementById('loading').classList.remove('show');
+                displayError('Connection failed. Make sure the backend server is running.');
+            }
+        });
     </script>
 </body>
 </html>

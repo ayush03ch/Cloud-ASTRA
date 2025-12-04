@@ -11,6 +11,7 @@ class Executor:
     """
     def __init__(self, creds: dict):
         self.logger = logging.getLogger("fixer_agent")
+        self.creds = creds
         try:
             self.s3_client = boto3.client(
                 "s3",
@@ -22,6 +23,19 @@ class Executor:
         except Exception as e:
             self.logger.error(f"Failed to initialize S3 client: {e}")
             self.s3_client = None
+        
+        # Initialize Lambda client
+        try:
+            self.lambda_client = boto3.client(
+                "lambda",
+                aws_access_key_id=creds.get("aws_access_key_id"),
+                aws_secret_access_key=creds.get("aws_secret_access_key"),
+                aws_session_token=creds.get("aws_session_token"),
+                region_name=creds.get("region", "us-east-1")
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to initialize Lambda client: {e}")
+            self.lambda_client = None
 
 
     def run(self, finding: dict) -> bool:
@@ -43,6 +57,27 @@ class Executor:
         action = fix.get("action")
         params = fix.get("params", {})
 
+        # Handle Lambda service
+        if service == "lambda":
+            if not self.lambda_client:
+                self.logger.error("Lambda client not initialized. Skipping fix.")
+                return False
+            
+            try:
+                if action == "adjust_timeout":
+                    return self.adjust_lambda_timeout(finding["resource"])
+                elif action == "adjust_memory":
+                    return self.adjust_lambda_memory(finding["resource"])
+                elif action == "enable_logging":
+                    return self.enable_lambda_logging(finding["resource"])
+                else:
+                    self.logger.warning(f"Unknown Lambda action: {action}")
+                    return False
+            except Exception as e:
+                self.logger.error(f"Error executing Lambda fix: {e}")
+                return False
+        
+        # Handle S3 service
         if service != "s3":
             self.logger.warning(f"Unsupported service: {service}")
             return False
@@ -326,3 +361,65 @@ class Executor:
         except Exception as e:
             self.logger.error(f"❌ Failed to fix website hosting for {bucket_name}: {e}")
             raise
+
+    # ============================================
+    # Lambda Fix Methods (Safe Auto-Fixes)
+    # ============================================
+    
+    def adjust_lambda_timeout(self, function_name: str) -> bool:
+        """Adjust Lambda function timeout to 60 seconds (safe for most use cases)."""
+        if not self.lambda_client:
+            self.logger.error("Lambda client not initialized")
+            return False
+        
+        try:
+            self.lambda_client.update_function_configuration(
+                FunctionName=function_name,
+                Timeout=60  # 60 seconds - reasonable for API endpoints
+            )
+            self.logger.info(f"✅ Successfully adjusted timeout for {function_name} to 60 seconds")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to adjust timeout for {function_name}: {e}")
+            return False
+    
+    def adjust_lambda_memory(self, function_name: str) -> bool:
+        """Adjust Lambda function memory to 256 MB (safe default)."""
+        if not self.lambda_client:
+            self.logger.error("Lambda client not initialized")
+            return False
+        
+        try:
+            self.lambda_client.update_function_configuration(
+                FunctionName=function_name,
+                MemorySize=256  # 256 MB - reasonable default
+            )
+            self.logger.info(f"✅ Successfully adjusted memory for {function_name} to 256 MB")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to adjust memory for {function_name}: {e}")
+            return False
+    
+    def enable_lambda_logging(self, function_name: str) -> bool:
+        """Enable CloudWatch logging for Lambda function."""
+        if not self.lambda_client:
+            self.logger.error("Lambda client not initialized")
+            return False
+        
+        try:
+            # Get current function configuration to preserve other settings
+            config = self.lambda_client.get_function_configuration(FunctionName=function_name)
+            
+            # Update with logging configuration
+            self.lambda_client.update_function_configuration(
+                FunctionName=function_name,
+                LoggingConfig={
+                    'LogFormat': 'JSON',
+                    'LogGroup': f'/aws/lambda/{function_name}'
+                }
+            )
+            self.logger.info(f"✅ Successfully enabled logging for {function_name}")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to enable logging for {function_name}: {e}")
+            return False
