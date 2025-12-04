@@ -23,12 +23,17 @@ class SupervisorAgent:
         logging.info(f"Assumed role: {self.role_arn}")
         return self.creds
 
-    def scan_and_fix(self, user_intent_input=None):
-        """Run dispatcher scans and apply fixes with FixerAgent."""
+    def scan_and_fix(self, user_intent_input=None, service=None):
+        """Run dispatcher scans and apply fixes with FixerAgent.
+        
+        Args:
+            user_intent_input: Dict mapping resource names to intents
+            service: Explicit service to scan ('s3' or 'lambda')
+        """
         if not self.creds:
             raise RuntimeError("Must call assume() before scan_and_fix()")
 
-        dispatcher = Dispatcher(self.creds)
+        dispatcher = Dispatcher(self.creds, service=service)
         findings = dispatcher.dispatch(user_intent_input=user_intent_input)
         logging.info(f"Findings: {json.dumps(findings, indent=2)}")
 

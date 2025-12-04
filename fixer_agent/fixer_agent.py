@@ -102,6 +102,30 @@ class FixerAgent:
                     "details": ["Configured public access block for website", "Applied public read policy"]
                 }
             
+            elif fix_type == "adjust_timeout":
+                success = self.executor.adjust_lambda_timeout(resource)
+                return {
+                    "success": success,
+                    "message": f"Adjusted timeout for Lambda function {resource} to 60 seconds",
+                    "details": ["Set timeout to 60 seconds", "Appropriate for most API endpoints", "Monitor function execution to adjust if needed"]
+                }
+            
+            elif fix_type == "adjust_memory":
+                success = self.executor.adjust_lambda_memory(resource)
+                return {
+                    "success": success,
+                    "message": f"Adjusted memory for Lambda function {resource} to 256 MB",
+                    "details": ["Set memory to 256 MB", "Appropriate for most workloads", "Increases CPU allocation proportionally"]
+                }
+            
+            elif fix_type == "enable_logging":
+                success = self.executor.enable_lambda_logging(resource)
+                return {
+                    "success": success,
+                    "message": f"Enabled CloudWatch logging for Lambda function {resource}",
+                    "details": ["Created CloudWatch log group", "Configured JSON log format", "Logs will be stored in /aws/lambda/{function-name}"]
+                }
+            
             else:
                 raise ValueError(f"Unknown fix type: {fix_type}")
                 

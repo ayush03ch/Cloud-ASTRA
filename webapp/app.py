@@ -27,14 +27,15 @@ def api_scan():
     
     Expected JSON:
     {
+        "service": "s3" or "lambda",
         "role_arn": "arn:aws:iam::account:role/name",
         "external_id": "external-id",
         "region": "us-east-1",
         "user_intent_input": {
             "bucket1": "website hosting",
-            "bucket2": "data storage"
+            "function1": "api_endpoint"
         },
-        "allow_conversion": true,
+        "allow_conversion": true (s3 only),
         "auto_fix": true,
         "detailed_logging": false
     }
@@ -46,6 +47,7 @@ def api_scan():
             return jsonify({"error": "No JSON data provided"}), 400
         
         # Extract required parameters
+        service = data.get('service', 's3')  # Default to s3 for backward compatibility
         role_arn = data.get('role_arn')
         external_id = data.get('external_id', 'default-external-id')
         region = data.get('region', 'us-east-1')
@@ -54,23 +56,22 @@ def api_scan():
         auto_fix = data.get('auto_fix', True)
         detailed_logging = data.get('detailed_logging', False)
         
-        # Handle simple user intent (applies to all buckets)
+        # Handle simple user intent (applies to all resources)
         simple_user_intent = data.get('user_intent')
         if simple_user_intent:
             app.logger.info(f"🐛 DEBUG: Received simple user_intent: {simple_user_intent}")
             # Convert simple intent to user_intent_input format
-            # We'll let the supervisor handle this
             user_intent_input = {'_global_intent': simple_user_intent}
         
         # DEBUG: Log the user intent input
-        app.logger.info(f"🐛 DEBUG: Final user_intent_input: {user_intent_input}")
+        app.logger.info(f"🐛 DEBUG: Service: {service}, Final user_intent_input: {user_intent_input}")
         
         # Use appropriate parameters based on request structure
         if not role_arn:
             # Try simplified format with account_id
             account_id = data.get('account_id')
             if account_id:
-                role_arn = f'arn:aws:iam::{account_id}:role/S3AgentRole'
+                role_arn = f'arn:aws:iam::{account_id}:role/{service.upper()}AgentRole'
                 external_id = 'unique-external-id-12345'
                 app.logger.info(f"🐛 DEBUG: Using simplified format with role_arn: {role_arn}")
             else:
@@ -93,13 +94,13 @@ def api_scan():
         
         # Run intent-aware scan and fix
         try:
-            results = supervisor.scan_and_fix(user_intent_input=user_intent_input)
+            results = supervisor.scan_and_fix(user_intent_input=user_intent_input, service=service)
             
             # Process results for web interface
             response = {
                 "success": True,
                 "summary": results.get('summary', {}),
-                "findings_count": len(results.get('findings', {}).get('s3', [])),
+                "findings_count": len(results.get('findings', {}).get(service, [])),
                 "auto_fixes_applied": results.get('auto_fixes_applied', []),
                 "pending_fixes": results.get('pending_fixes', []),
                 "intent_decisions": [],
@@ -116,17 +117,17 @@ def api_scan():
                 successful_fixes = sum(1 for fix in applied_fixes if fix.get('status') == 'applied')
                 response["auto_fix_summary"]["success_rate"] = (successful_fixes / len(applied_fixes)) * 100
             
-            # Extract intent decisions from findings (deduplicated by bucket)
-            s3_findings = results.get('findings', {}).get('s3', [])
-            intent_decisions_dict = {}  # Use dict to deduplicate by bucket name
+            # Extract intent decisions from findings (deduplicated by resource)
+            service_findings = results.get('findings', {}).get(service, [])
+            intent_decisions_dict = {}  # Use dict to deduplicate by resource name
             
-            for finding in s3_findings:
+            for finding in service_findings:
                 if finding.get('intent'):
-                    bucket_name = finding.get('resource')
-                    # Only add if we haven't seen this bucket before
-                    if bucket_name not in intent_decisions_dict:
-                        intent_decisions_dict[bucket_name] = {
-                            "bucket": bucket_name,
+                    resource_name = finding.get('resource')
+                    # Only add if we haven't seen this resource before
+                    if resource_name not in intent_decisions_dict:
+                        intent_decisions_dict[resource_name] = {
+                            "bucket" if service == 's3' else "function": resource_name,
                             "intent": finding.get('intent'),
                             "confidence": f"{finding.get('intent_confidence', 0):.2f}",
                             "reasoning": finding.get('intent_reasoning', 'No reasoning available')
@@ -135,7 +136,7 @@ def api_scan():
             # Convert dict values to list for response
             response["intent_decisions"] = list(intent_decisions_dict.values())
             
-            app.logger.info(f"Scan completed successfully. Found {response['findings_count']} issues")
+            app.logger.info(f"Scan completed successfully for {service}. Found {response['findings_count']} issues")
             return jsonify(response)
             
         except Exception as e:
@@ -202,11 +203,12 @@ def api_apply_manual_fix():
     
     Expected JSON:
     {
+        "service": "s3" or "lambda",
         "role_arn": "arn:aws:iam::account:role/name",
         "external_id": "external-id",
         "region": "us-east-1",
-        "resource": "bucket-name",
-        "fix_type": "public_access_block|index_document|disable_website_hosting"
+        "resource": "bucket-name or function-name",
+        "fix_type": "public_access_block|index_document|disable_website_hosting|enable_logging|..."
     }
     """
     try:
@@ -216,6 +218,7 @@ def api_apply_manual_fix():
             return jsonify({"error": "No JSON data provided"}), 400
         
         # Extract required parameters
+        service = data.get('service', 's3')  # Default to s3 for backward compatibility
         role_arn = data.get('role_arn')
         external_id = data.get('external_id')
         region = data.get('region', 'us-east-1')
@@ -244,11 +247,12 @@ def api_apply_manual_fix():
                 "success": True,
                 "resource": resource,
                 "fix_type": fix_type,
+                "service": service,
                 "message": result.get('message', 'Fix applied successfully'),
                 "details": result.get('details', [])
             }
             
-            app.logger.info(f"Manual fix applied successfully: {fix_type} for {resource}")
+            app.logger.info(f"Manual fix applied successfully: {fix_type} for {resource} ({service})")
             return jsonify(response)
             
         except Exception as e:
