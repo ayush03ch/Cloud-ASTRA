@@ -1096,19 +1096,19 @@
             </div>
             <nav class="sidebar-nav">
                     <div class="nav-item active" onclick="switchService('s3', this)" title="S3 Security">
-                        <span class="nav-icon">🪣</span>
+                        <span class="nav-icon"><img src="/static/logos/s3bucket.webp" style="width:20px;height:20px;object-fit:contain;"></span>
                         <span>S3</span>
                     </div>
                     <div class="nav-item" onclick="switchService('ec2', this)" title="EC2 Security">
-                        <span class="nav-icon">💻</span>
+                        <span class="nav-icon"><img src="/static/logos/ec2.svg" style="width:20px;height:20px;object-fit:contain;"></span>
                         <span>EC2</span>
                     </div>
                     <div class="nav-item" onclick="switchService('iam', this)" title="IAM Management">
-                        <span class="nav-icon">🔐</span>
+                        <span class="nav-icon"><img src="/static/logos/IAM.jpeg" style="width:20px;height:20px;object-fit:contain;"></span>
                         <span>IAM</span>
                     </div>
                     <div class="nav-item" onclick="switchService('lambda', this)" title="Lambda Security">
-                        <span class="nav-icon">⚡</span>
+                        <span class="nav-icon"><img src="/static/logos/lambda.png" style="width:20px;height:20px;object-fit:contain;"></span>
                         <span>Lambda</span>
                     </div>
                 </nav>
@@ -1122,7 +1122,7 @@
             <!-- LEFT PANEL -->
             <div class="left-panel">
                 <div class="panel-header">
-                    <h2 id="panelTitle">🪣 S3 Security Scanner</h2>
+                    <h2 id="panelTitle"><img src="/static/logos/s3bucket.webp" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> S3 Security Scanner</h2>
                 </div>
                 
                 <div class="panel-content">
@@ -1803,14 +1803,14 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             document.getElementById(service + '-screen').classList.add('active');
             
             const titles = {
-                's3': '🪣 S3 Security Scanner',
-                'ec2': '💻 EC2 Security Scanner',
-                'iam': '🔐 IAM Management',
-                'lambda': '⚡ Lambda Security Scanner',
+                's3': '<img src="/static/logos/s3bucket.webp" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> S3 Security Scanner',
+                'ec2': '<img src="/static/logos/ec2.svg" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> EC2 Security Scanner',
+                'iam': '<img src="/static/logos/IAM.jpeg" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> IAM Management',
+                'lambda': '<img src="/static/logos/lambda.png" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> Lambda Security Scanner',
                 'dashboard': '📊 Dashboard'
             };
             const title = titles[service];
-            document.getElementById('panelTitle').textContent = title;
+            document.getElementById('panelTitle').innerHTML = title;
             currentService = service;
             
             document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
