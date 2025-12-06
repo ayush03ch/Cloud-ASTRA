@@ -8,6 +8,8 @@ from pathlib import Path
 import yaml
 
 from agents.s3_agent.executor import S3Executor
+from agents.utils.llm_security_analyzer import LLMSecurityAnalyzer
+from agents.utils.rag_security_search import RAGSecuritySearch
 
 from .doc_search import DocSearch
 from .llm_fallback import LLMFallback
@@ -46,6 +48,17 @@ class S3Agent:
         self.llm_fallback = LLMFallback()
         self.intent_detector = IntentDetector()
         self.executor = S3Executor()
+        
+        # Initialize new detection tiers
+        self.rag_search = RAGSecuritySearch()
+        self.llm_analyzer = None
+        
+        # Initialize LLM only if API key exists
+        try:
+            self.llm_analyzer = LLMSecurityAnalyzer()
+            print("[S3Agent] ✅ LLM fallback enabled (Gemini)")
+        except ValueError as e:
+            print(f"[S3Agent] ⚠️  LLM fallback disabled: {e}")
 
 
     def _load_rules(self):
@@ -74,7 +87,12 @@ class S3Agent:
         findings = []
         buckets = self.client.list_buckets().get("Buckets", [])
         
-        # Step 1: Intent-aware rules-based detection
+        print(f"\n{'='*60}")
+        print(f"[S3Agent] Starting 3-Tier Security Analysis")
+        print(f"[S3Agent] Total buckets to scan: {len(buckets)}")
+        print(f"{'='*60}\n")
+        
+        # Step 1: Intent-aware rules-based detection (TIER 1)
         for bucket in buckets:
             bucket_name = bucket["Name"]
             
@@ -198,63 +216,108 @@ class S3Agent:
                         "intent": intent.value if 'intent' in locals() else "unknown"
                     })
 
-        # If no rule-based findings, try doc search + LLM with intent context
-        if not any(f["source"] == "rule" for f in findings):
+        # Count rule-based findings
+        rule_findings_count = sum(1 for f in findings if f.get("source") == "rule")
+        print(f"\n[S3Agent] TIER 1 (Rules): Found {rule_findings_count} total issues across all buckets")
+        
+        # Step 2: RAG-based detection (TIER 2) - run for each bucket
+        print(f"\n[S3Agent] TIER 2 (RAG): Starting knowledge base search...")
+        for bucket in buckets:
+            bucket_name = bucket["Name"]
+            
+            # Get intent for this bucket
+            user_intent = None
+            if user_intent_input:
+                user_intent = user_intent_input.get(bucket_name)
+                if not user_intent:
+                    user_intent = user_intent_input.get('_global_intent')
+            
+            intent, confidence, reasoning = self.intent_detector.detect_intent(
+                bucket_name, self.client, user_intent
+            )
+            
+            # Get bucket configuration for RAG
+            bucket_config = self._get_bucket_config(bucket_name)
+            
+            # Search RAG knowledge base
+            rag_findings = self.rag_search.search_security_issues(
+                service='s3',
+                configuration=bucket_config,
+                intent=intent.value,
+                top_k=5
+            )
+            
+            for rag_finding in rag_findings:
+                rag_finding['resource'] = bucket_name
+                rag_finding['service'] = 's3'
+                rag_finding['source'] = 'rag'
+                rag_finding['tier'] = 2
+                rag_finding['intent'] = intent.value
+                rag_finding['intent_confidence'] = confidence
+                findings.append(rag_finding)
+        
+        rag_findings_count = sum(1 for f in findings if f.get("source") == "rag")
+        print(f"[S3Agent] TIER 2 (RAG): Found {rag_findings_count} additional issues")
+        
+        # Step 3: LLM fallback (TIER 3) - only for buckets with few findings
+        if self.llm_analyzer:
+            print(f"\n[S3Agent] TIER 3 (LLM): Starting Gemini analysis...")
+            llm_findings_count = 0
+            
             for bucket in buckets:
                 bucket_name = bucket["Name"]
                 
-                # Get intent if not already detected
-                if not any(f["resource"] == bucket_name for f in findings):
-                    user_intent = user_intent_input.get(bucket_name) if user_intent_input else None
+                # Count findings for this specific bucket
+                bucket_findings = [f for f in findings if f.get("resource") == bucket_name]
+                
+                # Only use LLM if we have < 3 findings for this bucket
+                if len(bucket_findings) < 3:
+                    # Get intent for this bucket
+                    user_intent = None
+                    if user_intent_input:
+                        user_intent = user_intent_input.get(bucket_name)
+                        if not user_intent:
+                            user_intent = user_intent_input.get('_global_intent')
+                    
                     intent, confidence, reasoning = self.intent_detector.detect_intent(
                         bucket_name, self.client, user_intent
                     )
-                
-                # Step 2: Intent-aware doc search
-                docs = self.doc_search.search(f"S3 bucket {intent.value} misconfiguration", intent.value)
-                if docs and isinstance(docs, dict):  # Enhanced docs with intent context
-                    findings.append({
-                        "service": "s3",
-                        "resource": bucket_name,
-                        "issue": f"Potential {intent.value} configuration issue",
-                        "note": docs,
-                        "rule_id": "doc_ref",
-                        "auto_safe": False,
-                        "source": "doc_search",
-                        "intent": intent.value,
-                        "intent_confidence": confidence
-                    })
-                elif docs:  # Simple string response
-                    findings.append({
-                        "service": "s3",
-                        "resource": bucket_name,
-                        "issue": f"Potential {intent.value} configuration issue",
-                        "note": docs,
-                        "rule_id": "doc_ref",
-                        "auto_safe": False,
-                        "source": "doc_search",
-                        "intent": intent.value,
-                        "intent_confidence": confidence
-                    })
-                else:
-                    # Step 3: Intent-aware LLM fallback
-                    llm_fix = self.llm_fallback.suggest_fix(
-                        f"S3 bucket {intent.value} configuration issue", 
-                        intent.value, 
-                        bucket_name
-                    )
-                    findings.append({
-                        "service": "s3",
-                        "resource": bucket_name,
-                        "issue": f"Unknown {intent.value} issue",
-                        "fix": llm_fix,
-                        "rule_id": "llm_fallback",
-                        "auto_safe": False,
-                        "source": "llm",
-                        "intent": intent.value,
-                        "intent_confidence": confidence
-                    })
                     
+                    # Get full configuration
+                    bucket_config = self._get_bucket_config(bucket_name)
+                    
+                    # Analyze with LLM
+                    llm_findings = self.llm_analyzer.analyze_security_issues(
+                        service='s3',
+                        resource_name=bucket_name,
+                        configuration=bucket_config,
+                        intent=intent.value,
+                        user_context=str(user_intent_input) if user_intent_input else ""
+                    )
+                    
+                    for llm_finding in llm_findings:
+                        llm_finding['service'] = 's3'
+                        llm_finding['source'] = 'llm'
+                        llm_finding['tier'] = 3
+                        llm_finding['intent'] = intent.value
+                        llm_finding['intent_confidence'] = confidence
+                        llm_finding['rule_id'] = 'llm_fallback'
+                        findings.append(llm_finding)
+                        llm_findings_count += 1
+                else:
+                    print(f"[S3Agent] TIER 3 (LLM): Skipped {bucket_name} - sufficient findings ({len(bucket_findings)})")
+            
+            print(f"[S3Agent] TIER 3 (LLM): Found {llm_findings_count} additional issues")
+        else:
+            print(f"[S3Agent] TIER 3 (LLM): Skipped - Gemini API not configured")
+        
+        # Deduplicate findings across all tiers
+        findings = self._deduplicate_findings(findings)
+        
+        print(f"\n{'='*60}")
+        print(f"[S3Agent] Analysis Complete: {len(findings)} unique findings")
+        print(f"{'='*60}\n")
+        
         # Step 4: Return normalized findings
         return self.executor.format_for_fixer(findings)
 
@@ -308,6 +371,78 @@ class S3Agent:
                 
         # Default to rule's original auto_safe setting
         return rule.auto_safe
+
+    def _get_bucket_config(self, bucket_name: str) -> dict:
+        """Collect comprehensive bucket configuration for analysis"""
+        config = {'bucket_name': bucket_name}
+        
+        try:
+            config['encryption'] = self.client.get_bucket_encryption(Bucket=bucket_name)
+        except Exception:
+            config['encryption'] = None
+        
+        try:
+            config['public_access_block'] = self.client.get_public_access_block(Bucket=bucket_name)
+        except Exception:
+            config['public_access_block'] = None
+        
+        try:
+            config['versioning'] = self.client.get_bucket_versioning(Bucket=bucket_name)
+        except Exception:
+            config['versioning'] = None
+        
+        try:
+            config['logging'] = self.client.get_bucket_logging(Bucket=bucket_name)
+        except Exception:
+            config['logging'] = None
+        
+        try:
+            config['policy'] = self.client.get_bucket_policy(Bucket=bucket_name)
+        except Exception:
+            config['policy'] = None
+        
+        try:
+            config['acl'] = self.client.get_bucket_acl(Bucket=bucket_name)
+        except Exception:
+            config['acl'] = None
+        
+        try:
+            config['website'] = self.client.get_bucket_website(Bucket=bucket_name)
+        except Exception:
+            config['website'] = None
+        
+        try:
+            config['lifecycle'] = self.client.get_bucket_lifecycle_configuration(Bucket=bucket_name)
+        except Exception:
+            config['lifecycle'] = None
+        
+        try:
+            config['tags'] = self.client.get_bucket_tagging(Bucket=bucket_name)
+        except Exception:
+            config['tags'] = None
+        
+        return config
+
+    def _deduplicate_findings(self, findings: list) -> list:
+        """Remove duplicate findings across detection tiers (prefer rules > rag > llm)"""
+        seen = {}
+        unique = []
+        
+        # Sort by tier (prefer lower tier numbers = rules first)
+        for finding in sorted(findings, key=lambda x: x.get('tier', 0)):
+            # Create key from resource + issue (normalized)
+            resource = finding.get('resource', '')
+            issue = finding.get('issue', '').lower().strip()
+            key = (resource, issue)
+            
+            if key not in seen:
+                seen[key] = True
+                unique.append(finding)
+            else:
+                source = finding.get('source', 'unknown')
+                print(f"[S3Agent] Dedup: Skipping duplicate from {source} - {issue}")
+        
+        return unique
 
 
     def apply_fix(self, finding):

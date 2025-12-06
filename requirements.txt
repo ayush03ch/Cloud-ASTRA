@@ -9,12 +9,14 @@ coloredlogs==15.0.1     # Optional, for nice console logs
 
 # LLM / AI (future-proofing)
 openai==1.47.0          # OpenAI API (DocSearch/LLM fallback)
+google-generativeai>=0.3.0  # Google Gemini API for LLM security analysis
 tiktoken==0.8.0         # Token counting for OpenAI
 transformers==4.45.1    # If you switch to HuggingFace models
 sentence-transformers==3.2.0  # For embedding-based doc search
 
 # Web Interface
 Flask==3.0.0            # Web framework for UI
+python-dotenv>=1.0.0    # Load environment variables from .env file
 requests==2.31.0        # HTTP library for testing API
 
 # Testing & Dev

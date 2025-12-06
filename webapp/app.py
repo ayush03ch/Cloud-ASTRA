@@ -3,6 +3,10 @@ import sys
 import os
 import json
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Add parent directory to path so we can import our modules
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))

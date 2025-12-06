@@ -10,6 +10,8 @@ import json
 from typing import Dict, List, Optional, Any
 
 from agents.ec2_agent.executor import EC2Executor
+from agents.utils.llm_security_analyzer import LLMSecurityAnalyzer
+from agents.utils.rag_security_search import RAGSecuritySearch
 from .doc_search import DocSearch
 from .llm_fallback import LLMFallback
 from .intent_detector import EC2IntentDetector
@@ -48,6 +50,17 @@ class EC2Agent:
         self.llm_fallback = LLMFallback()
         self.intent_detector = EC2IntentDetector()
         self.executor = EC2Executor()
+        
+        # Initialize new detection tiers
+        self.rag_search = RAGSecuritySearch()
+        self.llm_analyzer = None
+        
+        # Initialize LLM only if API key exists
+        try:
+            self.llm_analyzer = LLMSecurityAnalyzer()
+            print("[EC2Agent] ✅ LLM fallback enabled (Gemini)")
+        except ValueError as e:
+            print(f"[EC2Agent] ⚠️  LLM fallback disabled: {e}")
 
     def _load_rules(self):
         """Dynamically import all rule classes from rules/ directory."""
@@ -238,6 +251,68 @@ class EC2Agent:
                         "intent_confidence": confidence,
                         "instance_state": instance.get('State', {}).get('Name', 'unknown')
                     })
+        
+        # Count rule findings
+        rule_findings_count = sum(1 for f in findings if f.get("source") == "rule")
+        print(f"\n[EC2Agent] TIER 1 (Rules): Found {rule_findings_count} total issues")
+        
+        # TIER 2: RAG-based detection
+        print(f"\n[EC2Agent] TIER 2 (RAG): Starting knowledge base search...")
+        for instance in instances_to_scan:
+            instance_id = instance['InstanceId']
+            user_intent = user_intent_input.get(instance_id) if user_intent_input else None
+            if not user_intent and user_intent_input:
+                user_intent = user_intent_input.get('_global_intent')
+            
+            intent, confidence, reasoning = self.intent_detector.detect_intent(instance_id, self.client, user_intent)
+            instance_config = self._get_instance_config(instance)
+            
+            rag_findings = self.rag_search.search_security_issues(
+                service='ec2', configuration=instance_config, intent=intent.value, top_k=5
+            )
+            
+            for rag_finding in rag_findings:
+                rag_finding.update({'resource': instance_id, 'service': 'ec2', 'source': 'rag', 'tier': 2,
+                                   'intent': intent.value, 'intent_confidence': confidence})
+                findings.append(rag_finding)
+        
+        rag_findings_count = sum(1 for f in findings if f.get("source") == "rag")
+        print(f"[EC2Agent] TIER 2 (RAG): Found {rag_findings_count} additional issues")
+        
+        # TIER 3: LLM fallback
+        if self.llm_analyzer:
+            print(f"\n[EC2Agent] TIER 3 (LLM): Starting Gemini analysis...")
+            llm_findings_count = 0
+            for instance in instances_to_scan:
+                instance_id = instance['InstanceId']
+                instance_findings = [f for f in findings if f.get("resource") == instance_id]
+                
+                if len(instance_findings) < 3:
+                    user_intent = user_intent_input.get(instance_id) if user_intent_input else None
+                    if not user_intent and user_intent_input:
+                        user_intent = user_intent_input.get('_global_intent')
+                    
+                    intent, confidence, reasoning = self.intent_detector.detect_intent(instance_id, self.client, user_intent)
+                    instance_config = self._get_instance_config(instance)
+                    
+                    llm_findings = self.llm_analyzer.analyze_security_issues(
+                        service='ec2', resource_name=instance_id, configuration=instance_config,
+                        intent=intent.value, user_context=str(user_intent_input) if user_intent_input else ""
+                    )
+                    
+                    for llm_finding in llm_findings:
+                        llm_finding.update({'service': 'ec2', 'source': 'llm', 'tier': 3,
+                                           'intent': intent.value, 'intent_confidence': confidence, 'rule_id': 'llm_fallback'})
+                        findings.append(llm_finding)
+                        llm_findings_count += 1
+            
+            print(f"[EC2Agent] TIER 3 (LLM): Found {llm_findings_count} additional issues")
+        else:
+            print(f"[EC2Agent] TIER 3 (LLM): Skipped - Gemini API not configured")
+        
+        # Deduplicate
+        findings = self._deduplicate_findings(findings)
+        print(f"\n[EC2Agent] Analysis Complete: {len(findings)} unique findings\n")
                     
         # Step 4: Return normalized findings
         return self.executor.format_for_fixer(findings)
@@ -568,3 +643,48 @@ class EC2Agent:
                 })
         
         return cost_savings
+
+    def _get_instance_config(self, instance: dict) -> dict:
+        """Collect comprehensive instance configuration for analysis"""
+        instance_id = instance.get('InstanceId', '')
+        config = {'instance': instance}
+        
+        try:
+            config['security_groups'] = instance.get('SecurityGroups', [])
+        except Exception:
+            config['security_groups'] = []
+        
+        try:
+            config['volumes'] = self.client.describe_volumes(
+                Filters=[{'Name': 'attachment.instance-id', 'Values': [instance_id]}]
+            ).get('Volumes', [])
+        except Exception:
+            config['volumes'] = []
+        
+        try:
+            config['snapshots'] = self.client.describe_snapshots(
+                Filters=[{'Name': 'volume-id', 'Values': [v['VolumeId'] for v in config.get('volumes', [])]}]
+            ).get('Snapshots', [])
+        except Exception:
+            config['snapshots'] = []
+        
+        return config
+
+    def _deduplicate_findings(self, findings: list) -> list:
+        """Remove duplicate findings across detection tiers (prefer rules > rag > llm)"""
+        seen = {}
+        unique = []
+        
+        for finding in sorted(findings, key=lambda x: x.get('tier', 0)):
+            resource = finding.get('resource', '')
+            issue = finding.get('issue', '').lower().strip()
+            key = (resource, issue)
+            
+            if key not in seen:
+                seen[key] = True
+                unique.append(finding)
+            else:
+                source = finding.get('source', 'unknown')
+                print(f"[EC2Agent] Dedup: Skipping duplicate from {source} - {issue}")
+        
+        return unique

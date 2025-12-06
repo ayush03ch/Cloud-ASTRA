@@ -8,6 +8,8 @@ from pathlib import Path
 import yaml
 
 from agents.lambda_agents.executor import LambdaExecutor
+from agents.utils.llm_security_analyzer import LLMSecurityAnalyzer
+from agents.utils.rag_security_search import RAGSecuritySearch
 
 from .doc_search import DocSearch
 from .llm_fallback import LLMFallback
@@ -46,6 +48,17 @@ class LambdaAgent:
         self.llm_fallback = LLMFallback()
         self.intent_detector = IntentDetector()
         self.executor = LambdaExecutor()
+        
+        # Initialize new detection tiers
+        self.rag_search = RAGSecuritySearch()
+        self.llm_analyzer = None
+        
+        # Initialize LLM only if API key exists
+        try:
+            self.llm_analyzer = LLMSecurityAnalyzer()
+            print("[LambdaAgent] ✅ LLM fallback enabled (Gemini)")
+        except ValueError as e:
+            print(f"[LambdaAgent] ⚠️  LLM fallback disabled: {e}")
 
     def _load_rules(self):
         """Dynamically load all rules from the rules directory."""
@@ -72,7 +85,7 @@ class LambdaAgent:
         return rules
 
     def analyze(self, function_name=None, region=None, user_intent_input=None):
-        """Analyze Lambda function(s) for security issues.
+        """Analyze Lambda function(s) for security issues using 3-tier detection.
         
         Args:
             function_name: Specific function to analyze (optional)
@@ -102,7 +115,12 @@ class LambdaAgent:
                     print(f"Error listing Lambda functions: {e}")
                     return findings
             
-            # Run all rules against each function
+            print(f"\n{'='*60}")
+            print(f"[LambdaAgent] Starting 3-Tier Security Analysis")
+            print(f"[LambdaAgent] Total functions to scan: {len(functions_to_check)}")
+            print(f"{'='*60}\n")
+            
+            # TIER 1: Intent-aware rules-based detection
             for func in functions_to_check:
                 func_name = func['FunctionName']
                 
@@ -137,7 +155,9 @@ class LambdaAgent:
                                 "fix_instructions": getattr(rule, 'fix_instructions', []),
                                 "can_auto_fix": getattr(rule, 'can_auto_fix', False),
                                 "fix_type": getattr(rule, 'fix_type', None),
-                                "auto_safe": getattr(rule, 'auto_safe', False)
+                                "auto_safe": getattr(rule, 'auto_safe', False),
+                                "source": "rule",
+                                "tier": 1
                             }
                             
                             # Add fix action if available
@@ -155,6 +175,94 @@ class LambdaAgent:
                             findings.append(finding)
                     except Exception as e:
                         print(f"Error running rule {rule_id} on {func_name}: {e}")
+            
+            rule_findings_count = sum(1 for f in findings if f.get("source") == "rule")
+            print(f"[LambdaAgent] TIER 1 (Rules): Found {rule_findings_count} total issues")
+            
+            # TIER 2: RAG-based detection
+            print(f"\n[LambdaAgent] TIER 2 (RAG): Starting knowledge base search...")
+            for func in functions_to_check:
+                func_name = func['FunctionName']
+                func_config = self._get_function_config(func_name)
+                
+                # Get intent
+                user_intent = None
+                if user_intent_input:
+                    user_intent = user_intent_input.get(func_name) or user_intent_input.get('_global_intent')
+                
+                intent, confidence, reasoning = self.intent_detector.detect_intent(
+                    func_name, self.client, user_intent=user_intent
+                )
+                
+                rag_findings = self.rag_search.search_security_issues(
+                    service='lambda',
+                    configuration=func_config,
+                    intent=intent.value if hasattr(intent, 'value') else str(intent),
+                    top_k=5
+                )
+                
+                for rag_finding in rag_findings:
+                    rag_finding['resource'] = func_name
+                    rag_finding['service'] = 'lambda'
+                    rag_finding['source'] = 'rag'
+                    rag_finding['tier'] = 2
+                    rag_finding['intent'] = intent.value if hasattr(intent, 'value') else str(intent)
+                    rag_finding['intent_confidence'] = confidence
+                    findings.append(rag_finding)
+            
+            rag_findings_count = sum(1 for f in findings if f.get("source") == "rag")
+            print(f"[LambdaAgent] TIER 2 (RAG): Found {rag_findings_count} additional issues")
+            
+            # TIER 3: LLM fallback
+            if self.llm_analyzer:
+                print(f"\n[LambdaAgent] TIER 3 (LLM): Starting Gemini analysis...")
+                llm_findings_count = 0
+                
+                for func in functions_to_check:
+                    func_name = func['FunctionName']
+                    func_findings = [f for f in findings if f.get("resource") == func_name]
+                    
+                    if len(func_findings) < 3:
+                        user_intent = None
+                        if user_intent_input:
+                            user_intent = user_intent_input.get(func_name) or user_intent_input.get('_global_intent')
+                        
+                        intent, confidence, reasoning = self.intent_detector.detect_intent(
+                            func_name, self.client, user_intent=user_intent
+                        )
+                        
+                        func_config = self._get_function_config(func_name)
+                        
+                        llm_findings = self.llm_analyzer.analyze_security_issues(
+                            service='lambda',
+                            resource_name=func_name,
+                            configuration=func_config,
+                            intent=intent.value if hasattr(intent, 'value') else str(intent),
+                            user_context=str(user_intent_input) if user_intent_input else ""
+                        )
+                        
+                        for llm_finding in llm_findings:
+                            llm_finding['service'] = 'lambda'
+                            llm_finding['source'] = 'llm'
+                            llm_finding['tier'] = 3
+                            llm_finding['intent'] = intent.value if hasattr(intent, 'value') else str(intent)
+                            llm_finding['intent_confidence'] = confidence
+                            llm_finding['rule_id'] = 'llm_fallback'
+                            findings.append(llm_finding)
+                            llm_findings_count += 1
+                    else:
+                        print(f"[LambdaAgent] TIER 3 (LLM): Skipped {func_name} - sufficient findings ({len(func_findings)})")
+                
+                print(f"[LambdaAgent] TIER 3 (LLM): Found {llm_findings_count} additional issues")
+            else:
+                print(f"[LambdaAgent] TIER 3 (LLM): Skipped - Gemini API not configured")
+            
+            # Deduplicate findings
+            findings = self._deduplicate_findings(findings)
+            
+            print(f"\n{'='*60}")
+            print(f"[LambdaAgent] Analysis Complete: {len(findings)} unique findings")
+            print(f"{'='*60}\n")
             
             return findings
         except Exception as e:
@@ -176,3 +284,47 @@ class LambdaAgent:
             return {"status": "success", "message": f"Fixed {function_name} with rule {rule_id}"}
         except Exception as e:
             return {"status": "error", "message": str(e)}
+
+    def _get_function_config(self, function_name: str) -> dict:
+        """Collect comprehensive function configuration for analysis"""
+        config = {'function_name': function_name}
+        
+        try:
+            response = self.client.get_function(FunctionName=function_name)
+            config['configuration'] = response.get('Configuration', {})
+            config['code'] = response.get('Code', {})
+        except Exception as e:
+            print(f"Error getting function config for {function_name}: {e}")
+            config['configuration'] = {}
+        
+        try:
+            config['policy'] = self.client.get_policy(FunctionName=function_name)
+        except Exception:
+            config['policy'] = None
+        
+        try:
+            config['concurrency'] = self.client.get_function_concurrency(FunctionName=function_name)
+        except Exception:
+            config['concurrency'] = None
+        
+        return config
+
+    def _deduplicate_findings(self, findings: list) -> list:
+        """Remove duplicate findings across detection tiers (prefer rules > rag > llm)"""
+        seen = {}
+        unique = []
+        
+        # Sort by tier (prefer lower tier numbers = rules first)
+        for finding in sorted(findings, key=lambda x: x.get('tier', 0)):
+            resource = finding.get('resource', '')
+            issue = finding.get('issue', '').lower().strip()
+            key = (resource, issue)
+            
+            if key not in seen:
+                seen[key] = True
+                unique.append(finding)
+            else:
+                source = finding.get('source', 'unknown')
+                print(f"[LambdaAgent] Dedup: Skipping duplicate from {source} - {issue}")
+        
+        return unique
