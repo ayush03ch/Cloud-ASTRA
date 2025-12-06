@@ -184,6 +184,66 @@ def api_scan():
             # Process results for web interface
             findings = results.get('findings', {})
             
+            # Handle nested findings structure if it exists
+            if 'findings' in findings:
+                findings = findings['findings']
+            
+            # Deduplicate findings - prioritize rule-based over LLM
+            def deduplicate_findings(findings_list):
+                """Remove duplicate findings, keeping the most specific one (rules > llm)"""
+                unique_findings = {}
+                
+                for finding in findings_list:
+                    resource = finding.get('resource', '')
+                    issue = finding.get('issue', '').lower()
+                    rule_id = finding.get('rule_id', '')
+                    
+                    # Create a key based on resource and normalized issue
+                    # Normalize common issue patterns
+                    issue_normalized = issue.replace('not enabled', '').replace('disabled', '').replace('not configured', '').strip()
+                    
+                    # Check for versioning issues
+                    if 'version' in issue_normalized:
+                        key = f"{resource}:versioning"
+                    # Check for logging issues
+                    elif 'logging' in issue_normalized or 'access log' in issue_normalized:
+                        key = f"{resource}:logging"
+                    # Check for lifecycle issues
+                    elif 'lifecycle' in issue_normalized:
+                        key = f"{resource}:lifecycle"
+                    # Check for tagging issues
+                    elif 'tag' in issue_normalized:
+                        key = f"{resource}:tagging"
+                    # Check for encryption issues
+                    elif 'encrypt' in issue_normalized:
+                        key = f"{resource}:encryption"
+                    # Check for public access issues
+                    elif 'public' in issue_normalized:
+                        key = f"{resource}:public_access"
+                    else:
+                        key = f"{resource}:{issue_normalized}"
+                    
+                    # Prioritize: rule-based > llm_fallback
+                    if key not in unique_findings:
+                        unique_findings[key] = finding
+                    else:
+                        # Replace if current is from rules and existing is from llm
+                        existing_rule_id = unique_findings[key].get('rule_id', '')
+                        if rule_id != 'llm_fallback' and existing_rule_id == 'llm_fallback':
+                            unique_findings[key] = finding
+                
+                return list(unique_findings.values())
+            
+            # Deduplicate findings for each service
+            if agent == 's3' and 's3' in findings:
+                findings['s3'] = deduplicate_findings(findings['s3'])
+            elif agent == 'ec2' and 'ec2' in findings:
+                findings['ec2'] = deduplicate_findings(findings['ec2'])
+            elif agent == 'iam' and 'iam' in findings:
+                findings['iam'] = deduplicate_findings(findings['iam'])
+            elif agent == 'lambda' and 'lambda' in findings:
+                findings['lambda'] = deduplicate_findings(findings['lambda'])
+            
             # Count findings based on agent type
             if agent == 's3':
                 findings_count = len(findings.get('s3', []))
@@ -204,6 +264,7 @@ def api_scan():
                 "findings_count": findings_count,
                 "auto_fixes_applied": results.get('auto_fixes_applied', []),
                 "pending_fixes": results.get('pending_fixes', []),
+                "findings": findings.get(agent, []) if agent else findings,
                 "intent_decisions": [],
                 "auto_fix_summary": {
                     "total_auto_fixed": len(results.get('auto_fixes_applied', [])),

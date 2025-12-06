@@ -23,16 +23,18 @@ class SupervisorAgent:
         logging.info(f"Assumed role: {self.role_arn}")
         return self.creds
 
-    def scan_and_fix(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None):
+    def scan_and_fix(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None, lambda_function_name=None, lambda_checks=None):
         """Run dispatcher scans and apply fixes with FixerAgent.
         
         Args:
             user_intent_input: Dict with user's explicit intent
-            service: Specific service to scan ('s3', 'ec2', 'iam', or None for all)
+            service: Specific service to scan ('s3', 'ec2', 'iam', 'lambda', or None for all)
             ec2_filters: Dict with EC2 instance filters (instance_ids, tags)
             ec2_checks: Dict with EC2 security checks to perform
             iam_scope: Scope for IAM scan ('account', 'users', 'roles', 'policies')
             iam_checks: Dict with IAM security checks to perform
+            lambda_function_name: Specific Lambda function name to scan (or None for all)
+            lambda_checks: Dict with Lambda security checks to perform
         """
         if not self.creds:
             raise RuntimeError("Must call assume() before scan_and_fix()")
@@ -44,7 +46,9 @@ class SupervisorAgent:
             ec2_filters=ec2_filters,
             ec2_checks=ec2_checks,
             iam_scope=iam_scope,
-            iam_checks=iam_checks
+            iam_checks=iam_checks,
+            lambda_function_name=lambda_function_name,
+            lambda_checks=lambda_checks
         )
         logging.info(f"Findings: {json.dumps(findings, indent=2)}")
 

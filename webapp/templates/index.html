@@ -70,6 +70,10 @@
             width: 56px;
         }
         
+        .sidebar.collapsed:hover {
+            width: 200px;
+        }
+        
         .sidebar-header {
             display: flex;
             align-items: center;
@@ -88,6 +92,13 @@
             gap: 4px;
         }
         
+        .sidebar.collapsed:hover .sidebar-header {
+            justify-content: space-between;
+            padding: 12px 16px;
+            flex-direction: row;
+            gap: var(--spacing-sm);
+        }
+        
         .sidebar-branding {
             display: flex;
             align-items: center;
@@ -99,6 +110,11 @@
         .sidebar.collapsed .sidebar-branding {
             width: 100%;
             justify-content: center;
+        }
+        
+        .sidebar.collapsed:hover .sidebar-branding {
+            width: auto;
+            justify-content: flex-start;
         }
         
         .sidebar-branding-icon {
@@ -117,6 +133,11 @@
         .sidebar.collapsed .sidebar-branding-text {
             opacity: 0;
             width: 0;
+        }
+        
+        .sidebar.collapsed:hover .sidebar-branding-text {
+            opacity: 1;
+            width: auto;
         }
         
         .sidebar-toggle {
@@ -142,6 +163,10 @@
         
         .sidebar.collapsed .sidebar-toggle {
             width: 100%;
+        }
+        
+        .sidebar.collapsed:hover .sidebar-toggle {
+            width: 32px;
         }
         
         .sidebar-nav {
@@ -175,8 +200,17 @@
             padding: 0;
         }
         
+        .sidebar.collapsed:hover .nav-item {
+            justify-content: flex-start;
+            padding: 0 12px;
+        }
+        
         .sidebar.collapsed .nav-item span:not(.nav-icon) {
             display: none;
+        }
+        
+        .sidebar.collapsed:hover .nav-item span:not(.nav-icon) {
+            display: inline;
         }
         
         .nav-icon {
@@ -221,8 +255,17 @@
             padding: 0;
         }
         
+        .sidebar.collapsed:hover .sidebar-footer {
+            justify-content: flex-start;
+            padding: 0 12px;
+        }
+        
         .sidebar.collapsed .sidebar-footer span:not(.sidebar-footer-icon) {
             display: none;
+        }
+        
+        .sidebar.collapsed:hover .sidebar-footer span:not(.sidebar-footer-icon) {
+            display: inline;
         }
         
         .sidebar-footer-icon {
@@ -892,6 +935,150 @@
             color: var(--text-secondary);
             font-size: 12px;
         }
+        
+        /* TIER-BASED RESULTS */
+        .tier-section {
+            margin-bottom: var(--spacing-md);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+        
+        .tier-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            cursor: pointer;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-primary);
+            transition: var(--transition);
+            user-select: none;
+        }
+        
+        .tier-header:hover {
+            background: var(--bg-hover);
+        }
+        
+        .tier-header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .tier-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tier-badge.tier-1 {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--terminal-error);
+            border: 1px solid var(--terminal-error);
+        }
+        
+        .tier-badge.tier-2 {
+            background: rgba(220, 220, 170, 0.2);
+            color: var(--terminal-warning);
+            border: 1px solid var(--terminal-warning);
+        }
+        
+        .tier-badge.tier-3 {
+            background: rgba(116, 192, 252, 0.2);
+            color: var(--terminal-info);
+            border: 1px solid var(--terminal-info);
+        }
+        
+        .tier-title {
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .tier-count {
+            color: var(--text-tertiary);
+            font-size: 12px;
+            margin-left: var(--spacing-sm);
+        }
+        
+        .tier-toggle {
+            color: var(--text-tertiary);
+            font-size: 14px;
+            transition: transform 300ms;
+        }
+        
+        .tier-section.expanded .tier-toggle {
+            transform: rotate(180deg);
+        }
+        
+        .tier-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .tier-section.expanded .tier-content {
+            max-height: 2000px;
+        }
+        
+        .tier-items {
+            padding: var(--spacing-md);
+        }
+        
+        .tier-item {
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            background: var(--bg-primary);
+            border-radius: 6px;
+            border-left: 3px solid var(--border-primary);
+            font-size: 12px;
+        }
+        
+        .tier-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .tier-item.tier-1 {
+            border-left-color: var(--terminal-error);
+        }
+        
+        .tier-item.tier-2 {
+            border-left-color: var(--terminal-warning);
+        }
+        
+        .tier-item.tier-3 {
+            border-left-color: var(--terminal-info);
+        }
+        
+        .tier-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .tier-item-resource {
+            color: var(--accent-light);
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .tier-item-issue {
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+            font-size: 12px;
+        }
+        
+        .tier-item-details {
+            color: var(--text-tertiary);
+            font-size: 11px;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
@@ -901,7 +1088,7 @@
             <div class="sidebar-header">
                 <div class="sidebar-branding">
                     <span class="sidebar-branding-icon">🛡️</span>
-                    <span class="sidebar-branding-text">Cloud Astra</span>
+                    <span class="sidebar-branding-text">CloudASTRA</span>
                 </div>
                 <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
                     <span id="sidebarToggleIcon">☰</span>
@@ -1578,13 +1765,14 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             <!-- RIGHT PANEL - TERMINAL -->
             <div class="right-panel" id="rightPanel">
                 <div class="terminal-header">
-                    <h3>🖥️ Terminal</h3>
+                    <h3>🖥️ Astra</h3>
                 </div>
                 
                 <div class="terminal-container">
                     <div class="terminal-output" id="terminalOutput">
-                        <div class="terminal-output-line success">Welcome to Astra, your CloudASTRA CLI</div>
-                        <div class="terminal-output-line info">Type 'help' for Cloud ASTRA & AWS CLI commands</div>
+                        <div class="terminal-output-line success">>>> Astra Terminal Activated  </div>
+                        <div class="terminal-output-line info">Scanning, detecting, and resolving AWS misconfigurations begins now.</div>
+                        <div class="terminal-output-line info">Type 'help' for CloudASTRA & AWS CLI commands</div>
                     </div>
                     
                     <div class="terminal-prompt">
@@ -1812,18 +2000,202 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             } else {
                 let html = `
                     <div class="result-item">
-                        <h4>📊 Summary</h4>
-                        <p>Issues: ${result.findings_count || 0}</p>
-                        <p>Auto-fixes: ${result.auto_fixes_applied?.length || 0}</p>
-                        <p>Manual review: ${result.pending_fixes?.length || 0}</p>
+                        <h4>📊 Scan Summary</h4>
+                        <p>Total Issues: ${result.findings_count || 0}</p>
+                        <p>Auto-fixes Applied: ${result.auto_fixes_applied?.length || 0}</p>
+                        <p>Manual Review Required: ${result.pending_fixes?.length || 0}</p>
                     </div>
                 `;
                 
-                if (result.pending_fixes?.length > 0) {
+                // Get all findings - prefer findings array, fallback to pending_fixes
+                let allFindings = result.findings || result.pending_fixes || [];
+                
+                // If findings is not an array, it might be an object, so convert it
+                if (!Array.isArray(allFindings) && typeof allFindings === 'object') {
+                    allFindings = Object.values(allFindings).flat();
+                }
+                
+                // Deduplicate findings across all tiers
+                function deduplicateFindings(findings) {
+                    const uniqueFindings = new Map();
+                    
+                    findings.forEach(finding => {
+                        const resource = (finding.resource || finding.bucket || finding.instance_id || '').toLowerCase();
+                        const issue = (finding.issue || finding.description || '').toLowerCase();
+                        
+                        // Normalize issue text to detect duplicates
+                        let normalizedIssue = issue
+                            .replace(/s3:\/\//g, '')
+                            .replace(/bucket /g, '')
+                            .replace(/not enabled/g, '')
+                            .replace(/is not enabled/g, '')
+                            .replace(/disabled/g, '')
+                            .replace(/not configured/g, '')
+                            .replace(/lacks/g, '')
+                            .replace(/no /g, '')
+                            .trim();
+                        
+                        // Create category-based keys for common issue types
+                        let key;
+                        if (normalizedIssue.includes('version')) {
+                            key = `${resource}:versioning`;
+                        } else if (normalizedIssue.includes('logging') || normalizedIssue.includes('access log')) {
+                            key = `${resource}:logging`;
+                        } else if (normalizedIssue.includes('lifecycle')) {
+                            key = `${resource}:lifecycle`;
+                        } else if (normalizedIssue.includes('tag')) {
+                            key = `${resource}:tagging`;
+                        } else if (normalizedIssue.includes('encrypt')) {
+                            key = `${resource}:encryption`;
+                        } else if (normalizedIssue.includes('public')) {
+                            key = `${resource}:public_access`;
+                        } else if (normalizedIssue.includes('policy') && normalizedIssue.includes('bucket')) {
+                            key = `${resource}:bucket_policy`;
+                        } else {
+                            // Use normalized issue as key for other cases
+                            key = `${resource}:${normalizedIssue}`;
+                        }
+                        
+                        // Only keep first occurrence (deduplication)
+                        if (!uniqueFindings.has(key)) {
+                            uniqueFindings.set(key, finding);
+                        }
+                    });
+                    
+                    return Array.from(uniqueFindings.values());
+                }
+                
+                // Deduplicate before grouping by tier
+                allFindings = deduplicateFindings(allFindings);
+                
+                // Group findings by tier
+                const tier1 = [];
+                const tier2 = [];
+                const tier3 = [];
+                
+                if (allFindings && allFindings.length > 0) {
+                    allFindings.forEach(finding => {
+                        // Determine tier from various possible fields
+                        let tier = finding.tier || finding.severity || finding.priority || 2;
+                        
+                        // Normalize string severities to numeric tiers
+                        if (typeof tier === 'string') {
+                            tier = tier.toLowerCase();
+                            if (tier === 'critical' || tier === 'high' || tier === '1') {
+                                tier = 1;
+                            } else if (tier === 'medium' || tier === 'warning' || tier === '2') {
+                                tier = 2;
+                            } else {
+                                tier = 3;
+                            }
+                        }
+                        
+                        if (tier === 1) {
+                            tier1.push(finding);
+                        } else if (tier === 2) {
+                            tier2.push(finding);
+                        } else {
+                            tier3.push(finding);
+                        }
+                    });
+                }
+                
+                // Display Tier 1 (Critical/High)
+                if (tier1.length > 0) {
                     html += `
-                        <div class="result-item warning">
-                            <h4>⚠️ Manual Review</h4>
-                            ${result.pending_fixes.map(f => `<p>${f.resource}: ${f.issue}</p>`).join('')}
+                        <div class="tier-section expanded" onclick="toggleTier(event, this)">
+                            <div class="tier-header">
+                                <div class="tier-header-left">
+                                    <span class="tier-badge tier-1">Tier 1</span>
+                                    <span class="tier-title">Critical Issues</span>
+                                    <span class="tier-count">(${tier1.length})</span>
+                                </div>
+                                <span class="tier-toggle">▼</span>
+                            </div>
+                            <div class="tier-content">
+                                <div class="tier-items">
+                                    ${tier1.map(f => `
+                                        <div class="tier-item tier-1">
+                                            <div class="tier-item-header">
+                                                <span class="tier-item-resource">🔴 ${f.resource || f.bucket || f.instance_id || f.function_name || 'Resource'}</span>
+                                            </div>
+                                            <div class="tier-item-issue">${f.issue || f.description || f.rule_name || 'Issue detected'}</div>
+                                            ${f.details || f.reasoning ? `<div class="tier-item-details">${f.details || f.reasoning}</div>` : ''}
+                                            ${f.intent ? `<div class="tier-item-details">Detected Intent: ${f.intent}</div>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Display Tier 2 (Medium)
+                if (tier2.length > 0) {
+                    html += `
+                        <div class="tier-section" onclick="toggleTier(event, this)">
+                            <div class="tier-header">
+                                <div class="tier-header-left">
+                                    <span class="tier-badge tier-2">Tier 2</span>
+                                    <span class="tier-title">Medium Priority</span>
+                                    <span class="tier-count">(${tier2.length})</span>
+                                </div>
+                                <span class="tier-toggle">▼</span>
+                            </div>
+                            <div class="tier-content">
+                                <div class="tier-items">
+                                    ${tier2.map(f => `
+                                        <div class="tier-item tier-2">
+                                            <div class="tier-item-header">
+                                                <span class="tier-item-resource">🟡 ${f.resource || f.bucket || f.instance_id || f.function_name || 'Resource'}</span>
+                                            </div>
+                                            <div class="tier-item-issue">${f.issue || f.description || f.rule_name || 'Issue detected'}</div>
+                                            ${f.details || f.reasoning ? `<div class="tier-item-details">${f.details || f.reasoning}</div>` : ''}
+                                            ${f.intent ? `<div class="tier-item-details">Detected Intent: ${f.intent}</div>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Display Tier 3 (Low/Info)
+                if (tier3.length > 0) {
+                    html += `
+                        <div class="tier-section" onclick="toggleTier(event, this)">
+                            <div class="tier-header">
+                                <div class="tier-header-left">
+                                    <span class="tier-badge tier-3">Tier 3</span>
+                                    <span class="tier-title">Low Priority / Info</span>
+                                    <span class="tier-count">(${tier3.length})</span>
+                                </div>
+                                <span class="tier-toggle">▼</span>
+                            </div>
+                            <div class="tier-content">
+                                <div class="tier-items">
+                                    ${tier3.map(f => `
+                                        <div class="tier-item tier-3">
+                                            <div class="tier-item-header">
+                                                <span class="tier-item-resource">🔵 ${f.resource || f.bucket || f.instance_id || f.function_name || 'Resource'}</span>
+                                            </div>
+                                            <div class="tier-item-issue">${f.issue || f.description || f.rule_name || 'Issue detected'}</div>
+                                            ${f.details || f.reasoning ? `<div class="tier-item-details">${f.details || f.reasoning}</div>` : ''}
+                                            ${f.intent ? `<div class="tier-item-details">Detected Intent: ${f.intent}</div>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Show message if no issues found
+                if (tier1.length === 0 && tier2.length === 0 && tier3.length === 0 && result.findings_count === 0) {
+                    html += `
+                        <div class="result-item">
+                            <h4>✅ All Clear</h4>
+                            <p>No security issues found!</p>
                         </div>
                     `;
                 }
@@ -1832,6 +2204,11 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             }
             
             resultsPanel.classList.add('active');
+        }
+        
+        function toggleTier(event, element) {
+            event.stopPropagation();
+            element.classList.toggle('expanded');
         }
         
         // Terminal Functions
@@ -1903,11 +2280,11 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 }
                 
                 addTerminalOutput('', 'info');
-                addTerminalOutput('┌─ AWS Credentials ─────────────────────────┐', 'success');
-                addTerminalOutput(`│ ARN:        ${roleArn.substring(0, 35).padEnd(35)}│`, 'success');
-                addTerminalOutput(`│ External ID: ${externalId.padEnd(31)}│`, 'success');
-                addTerminalOutput(`│ Region:     ${region.padEnd(35)}│`, 'success');
-                addTerminalOutput('└────────────────────────────────────────────┘', 'success');
+                addTerminalOutput('┌─ AWS Credentials ─────────────────────────────┐', 'success');
+                addTerminalOutput(`     ARN:        ${roleArn.substring(0, 35).padEnd(35)}`, 'success');
+                addTerminalOutput(`     External ID: ${externalId.padEnd(31)}`, 'success');
+                addTerminalOutput(`     Region:     ${region.padEnd(35)}`, 'success');
+                addTerminalOutput('└───────────────────────────────────────────────┘', 'success');
                 addTerminalOutput('', 'info');
                 return;
             }
