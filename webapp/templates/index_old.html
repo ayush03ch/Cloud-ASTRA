@@ -508,10 +508,10 @@
         
         <div class="agent-tabs">
             <button class="tab-button active" onclick="switchAgent('s3')" data-agent="s3">
-                🪣 S3 Security
+                <img src="/static/logos/s3bucket.webp" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:4px;"> S3 Security
             </button>
             <button class="tab-button" onclick="switchAgent('ec2')" data-agent="ec2">
-                💻 EC2 Security
+                <img src="/static/logos/ec2.svg" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:4px;"> EC2 Security
             </button>
         </div>
         
@@ -937,7 +937,7 @@
                 let html = `
                     <div class="result-item">
                         <h4>📊 Scan Summary</h4>
-                        <p><strong>Agent:</strong> ${result.agent === 'ec2' ? '💻 EC2' : '🪣 S3'}</p>
+                        <p><strong>Agent:</strong> ${result.agent === 'ec2' ? '<img src="/static/logos/ec2.svg" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;"> EC2' : '<img src="/static/logos/s3bucket.webp" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;"> S3'}</p>
                         <p><strong>Issues Found:</strong> ${result.findings_count || 0}</p>
                         <p><strong>Auto-fixes Applied:</strong> ${result.auto_fixes_applied?.length || 0}</p>
                         <p><strong>Manual Reviews Needed:</strong> ${result.pending_fixes?.length || 0}</p>
