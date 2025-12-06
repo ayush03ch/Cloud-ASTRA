@@ -49,41 +49,7 @@
         
         .app-wrapper {
             display: flex;
-            flex-direction: column;
             height: 100vh;
-        }
-        
-        /* HEADER */
-        .app-header {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            padding: 12px 24px;
-            border-bottom: 1px solid var(--border-primary);
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            height: 56px;
-        }
-        
-        .app-header h1 {
-            font-size: 16px;
-            margin: 0;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        
-        .app-header p {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            margin: 0;
-            margin-left: auto;
-        }
-        
-        /* MAIN CONTENT CONTAINER */
-        .app-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
         }
         
         /* SIDEBAR - REFINED */
@@ -94,9 +60,88 @@
             flex-direction: column;
             justify-content: space-between;
             align-items: stretch;
-            padding: var(--spacing-sm) 0;
             border-right: 1px solid var(--border-primary);
             z-index: 100;
+            transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .sidebar.collapsed {
+            width: 56px;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-primary);
+            height: 56px;
+            gap: var(--spacing-sm);
+            flex-shrink: 0;
+        }
+        
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 12px 8px;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .sidebar-branding {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        
+        .sidebar.collapsed .sidebar-branding {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .sidebar-branding-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-branding-text {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+            transition: opacity 200ms;
+        }
+        
+        .sidebar.collapsed .sidebar-branding-text {
+            opacity: 0;
+            width: 0;
+        }
+        
+        .sidebar-toggle {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            transition: var(--transition);
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-toggle:hover {
+            background: var(--bg-tertiary);
+            color: var(--accent-light);
+        }
+        
+        .sidebar.collapsed .sidebar-toggle {
+            width: 100%;
         }
         
         .sidebar-nav {
@@ -122,6 +167,16 @@
             padding: 0 12px;
             font-size: 14px;
             font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .sidebar.collapsed .nav-item span:not(.nav-icon) {
+            display: none;
         }
         
         .nav-icon {
@@ -158,6 +213,16 @@
             font-size: 14px;
             margin: var(--spacing-sm);
             border-left: 3px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .sidebar.collapsed .sidebar-footer {
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .sidebar.collapsed .sidebar-footer span:not(.sidebar-footer-icon) {
+            display: none;
         }
         
         .sidebar-footer-icon {
@@ -192,7 +257,7 @@
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-primary);
             flex-shrink: 0;
-            height: 48px;
+            height: 56px;
             display: flex;
             align-items: center;
         }
@@ -443,19 +508,22 @@
         
         /* SETUP GUIDE SECTION */
         .setup-guide-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
+            padding: var(--spacing-lg);
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-primary);
+            border-left: 3px solid var(--accent-primary);
             margin-bottom: var(--spacing-lg);
+            grid-column: 1 / -1;
         }
         
         .setup-guide-heading {
-            color: var(--accent-light);
+            color: var(--text-secondary);
             font-size: 14px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
         }
         
         .setup-guide-container {
@@ -472,16 +540,16 @@
         }
         
         .setup-tab {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(79, 70, 229, 0.05));
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
             border-radius: 8px;
             overflow: hidden;
             transition: var(--transition);
         }
         
         .setup-tab-header {
-            background: var(--bg-tertiary);
-            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-primary);
             padding: 8px 16px;
             height: 30px;
             display: flex;
@@ -497,7 +565,7 @@
         }
         
         .setup-tab-header-text {
-            color: var(--accent-light);
+            color: var(--text-secondary);
             font-size: 13px;
             font-weight: 600;
             letter-spacing: 0.5px;
@@ -828,17 +896,18 @@
 </head>
 <body>
     <div class="app-wrapper">
-        <!-- HEADER -->
-        <header class="app-header">
-            <h1>🛡️ Cloud Astra</h1>
-            <p>Intent-Aware AWS Security Management</p>
-        </header>
-        
-        <!-- MAIN APP -->
-        <div class="app-container">
-            <!-- SIDEBAR -->
-            <aside class="sidebar">
-                <nav class="sidebar-nav">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-branding">
+                    <span class="sidebar-branding-icon">🛡️</span>
+                    <span class="sidebar-branding-text">Cloud Astra</span>
+                </div>
+                <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                    <span id="sidebarToggleIcon">☰</span>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
                     <div class="nav-item active" onclick="switchService('s3', this)" title="S3 Security">
                         <span class="nav-icon">🪣</span>
                         <span>S3</span>
@@ -956,8 +1025,6 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                            <hr class="setup-divider">
                             
                             <form id="scanForm" onsubmit="submitScan(event)">
                                 <div class="form-wrapper">
@@ -1106,7 +1173,6 @@ aws iam attach-role-policy --role-name CloudAstraEC2Role \
                                     </div>
                                 </div>
                             </div>
-                            <hr class="setup-divider">
                             
                             <form id="ec2ScanForm" onsubmit="submitScan(event)">
                                 <div class="form-wrapper">
@@ -1258,7 +1324,6 @@ aws iam attach-role-policy --role-name CloudAstraIAMRole \
                                     </div>
                                 </div>
                             </div>
-                            <hr class="setup-divider">
                             
                             <form id="iamScanForm" onsubmit="submitScan(event)">
                                 <div class="form-wrapper">
@@ -1352,6 +1417,7 @@ aws iam attach-role-policy --role-name CloudAstraIAMRole \
                                     <div class="setup-guide-column">
                                         <div class="setup-tab" onclick="this.classList.toggle('expanded')">
                                             <div class="setup-tab-header">
+                                                <!-- <span class="setup-tab-header-text">📋 GUI Steps</span> -->
                                                 <span class="setup-tab-header-text">📋 GUI Steps</span>
                                                 <span class="setup-tab-toggle">▼</span>
                                             </div>
@@ -1415,7 +1481,6 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                                     </div>
                                 </div>
                             </div>
-                            <hr class="setup-divider">
                             
                             <form id="lambdaScanForm" onsubmit="submitScan(event)">
                                 <div class="form-wrapper">
@@ -1556,10 +1621,17 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 'lambda': '⚡ Lambda Security Scanner',
                 'dashboard': '📊 Dashboard'
             };
-            document.getElementById('panelTitle').textContent = titles[service];
+            const title = titles[service];
+            document.getElementById('panelTitle').textContent = title;
             currentService = service;
             
             document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
+        }
+        
+        // Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
         }
         
         // Terminal Toggle
