@@ -10,6 +10,8 @@ import json
 from typing import Dict, List, Optional, Any
 
 from agents.iam_agent.executor import IAMExecutor
+from agents.utils.llm_security_analyzer import LLMSecurityAnalyzer
+from agents.utils.rag_security_search import RAGSecuritySearch
 from .doc_search import DocSearch
 from .llm_fallback import LLMFallback
 from .intent_detector import IAMIntentDetector
@@ -48,6 +50,17 @@ class IAMAgent:
         self.llm_fallback = LLMFallback()
         self.intent_detector = IAMIntentDetector()
         self.executor = IAMExecutor()
+        
+        # Initialize new detection tiers
+        self.rag_search = RAGSecuritySearch()
+        self.llm_analyzer = None
+        
+        # Initialize LLM only if API key exists
+        try:
+            self.llm_analyzer = LLMSecurityAnalyzer()
+            print("[IAMAgent] ✅ LLM fallback enabled (Gemini)")
+        except ValueError as e:
+            print(f"[IAMAgent] ⚠️  LLM fallback disabled: {e}")
 
     def _load_rules(self):
         """Dynamically import all rule classes from rules/ directory."""
@@ -235,6 +248,70 @@ class IAMAgent:
                             "intent": intent.value,
                             "intent_confidence": confidence
                         })
+        
+        # Count rule findings
+        rule_findings_count = sum(1 for f in findings if f.get("source") == "rule")
+        print(f"\n[IAMAgent] TIER 1 (Rules): Found {rule_findings_count} total issues")
+        
+        # TIER 2: RAG-based detection
+        print(f"\n[IAMAgent] TIER 2 (RAG): Starting knowledge base search...")
+        for resource_type, resource_list in resources_to_scan.items():
+            for resource in resource_list:
+                resource_name = self._get_resource_name(resource_type, resource)
+                user_intent = user_intent_input.get(resource_name) if user_intent_input else None
+                if not user_intent and user_intent_input:
+                    user_intent = user_intent_input.get('_global_intent')
+                
+                intent, confidence, reasoning = self.intent_detector.detect_intent(resource_type, resource_name, self.client, user_intent)
+                resource_config = self._get_resource_config(resource_type, resource_name)
+                
+                rag_findings = self.rag_search.search_security_issues(
+                    service='iam', configuration=resource_config, intent=intent.value, top_k=5
+                )
+                
+                for rag_finding in rag_findings:
+                    rag_finding.update({'resource': resource_name, 'service': 'iam', 'source': 'rag', 'tier': 2,
+                                       'intent': intent.value, 'intent_confidence': confidence, 'resource_type': resource_type})
+                    findings.append(rag_finding)
+        
+        rag_findings_count = sum(1 for f in findings if f.get("source") == "rag")
+        print(f"[IAMAgent] TIER 2 (RAG): Found {rag_findings_count} additional issues")
+        
+        # TIER 3: LLM fallback
+        if self.llm_analyzer:
+            print(f"\n[IAMAgent] TIER 3 (LLM): Starting Gemini analysis...")
+            llm_findings_count = 0
+            for resource_type, resource_list in resources_to_scan.items():
+                for resource in resource_list:
+                    resource_name = self._get_resource_name(resource_type, resource)
+                    resource_findings = [f for f in findings if f.get("resource") == resource_name]
+                    
+                    if len(resource_findings) < 3:
+                        user_intent = user_intent_input.get(resource_name) if user_intent_input else None
+                        if not user_intent and user_intent_input:
+                            user_intent = user_intent_input.get('_global_intent')
+                        
+                        intent, confidence, reasoning = self.intent_detector.detect_intent(resource_type, resource_name, self.client, user_intent)
+                        resource_config = self._get_resource_config(resource_type, resource_name)
+                        
+                        llm_findings = self.llm_analyzer.analyze_security_issues(
+                            service='iam', resource_name=resource_name, configuration=resource_config,
+                            intent=intent.value, user_context=str(user_intent_input) if user_intent_input else ""
+                        )
+                        
+                        for llm_finding in llm_findings:
+                            llm_finding.update({'service': 'iam', 'source': 'llm', 'tier': 3, 'resource_type': resource_type,
+                                               'intent': intent.value, 'intent_confidence': confidence, 'rule_id': 'llm_fallback'})
+                            findings.append(llm_finding)
+                            llm_findings_count += 1
+            
+            print(f"[IAMAgent] TIER 3 (LLM): Found {llm_findings_count} additional issues")
+        else:
+            print(f"[IAMAgent] TIER 3 (LLM): Skipped - Gemini API not configured")
+        
+        # Deduplicate
+        findings = self._deduplicate_findings(findings)
+        print(f"\n[IAMAgent] Analysis Complete: {len(findings)} unique findings\n")
                         
         # Step 4: Return normalized findings
         return self.executor.format_for_fixer(findings)
@@ -490,3 +567,50 @@ class IAMAgent:
                 summary["by_severity"][severity] += 1
         
         return summary
+
+    def _get_resource_config(self, resource_type: str, resource_name: str) -> dict:
+        """Collect comprehensive resource configuration for analysis"""
+        config = {'resource_type': resource_type, 'resource_name': resource_name}
+        
+        try:
+            if resource_type == 'user':
+                config['user'] = self.client.get_user(UserName=resource_name)
+                config['policies'] = self.client.list_attached_user_policies(UserName=resource_name).get('AttachedPolicies', [])
+                config['groups'] = self.client.list_groups_for_user(UserName=resource_name).get('Groups', [])
+                config['access_keys'] = self.client.list_access_keys(UserName=resource_name).get('AccessKeyMetadata', [])
+                try:
+                    config['mfa_devices'] = self.client.list_mfa_devices(UserName=resource_name).get('MFADevices', [])
+                except:
+                    config['mfa_devices'] = []
+            elif resource_type == 'role':
+                config['role'] = self.client.get_role(RoleName=resource_name)
+                config['policies'] = self.client.list_attached_role_policies(RoleName=resource_name).get('AttachedPolicies', [])
+            elif resource_type == 'policy':
+                config['policy'] = self.client.get_policy(PolicyArn=resource_name)
+                config['policy_version'] = self.client.get_policy_version(
+                    PolicyArn=resource_name,
+                    VersionId=config['policy']['Policy']['DefaultVersionId']
+                )
+        except Exception as e:
+            print(f"Error getting config for {resource_type} {resource_name}: {e}")
+        
+        return config
+
+    def _deduplicate_findings(self, findings: list) -> list:
+        """Remove duplicate findings across detection tiers (prefer rules > rag > llm)"""
+        seen = {}
+        unique = []
+        
+        for finding in sorted(findings, key=lambda x: x.get('tier', 0)):
+            resource = finding.get('resource', '')
+            issue = finding.get('issue', '').lower().strip()
+            key = (resource, issue)
+            
+            if key not in seen:
+                seen[key] = True
+                unique.append(finding)
+            else:
+                source = finding.get('source', 'unknown')
+                print(f"[IAMAgent] Dedup: Skipping duplicate from {source} - {issue}")
+        
+        return unique
