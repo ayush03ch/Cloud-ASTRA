@@ -23,18 +23,29 @@ class SupervisorAgent:
         logging.info(f"Assumed role: {self.role_arn}")
         return self.creds
 
-    def scan_and_fix(self, user_intent_input=None, service=None):
+    def scan_and_fix(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None):
         """Run dispatcher scans and apply fixes with FixerAgent.
         
         Args:
-            user_intent_input: Dict mapping resource names to intents
-            service: Explicit service to scan ('s3' or 'lambda')
+            user_intent_input: Dict with user's explicit intent
+            service: Specific service to scan ('s3', 'ec2', 'iam', or None for all)
+            ec2_filters: Dict with EC2 instance filters (instance_ids, tags)
+            ec2_checks: Dict with EC2 security checks to perform
+            iam_scope: Scope for IAM scan ('account', 'users', 'roles', 'policies')
+            iam_checks: Dict with IAM security checks to perform
         """
         if not self.creds:
             raise RuntimeError("Must call assume() before scan_and_fix()")
 
-        dispatcher = Dispatcher(self.creds, service=service)
-        findings = dispatcher.dispatch(user_intent_input=user_intent_input)
+        dispatcher = Dispatcher(self.creds)
+        findings = dispatcher.dispatch(
+            user_intent_input=user_intent_input,
+            service=service,
+            ec2_filters=ec2_filters,
+            ec2_checks=ec2_checks,
+            iam_scope=iam_scope,
+            iam_checks=iam_checks
+        )
         logging.info(f"Findings: {json.dumps(findings, indent=2)}")
 
         # Count total issues found
@@ -43,7 +54,7 @@ class SupervisorAgent:
         
         # Flatten and count findings
         if isinstance(findings, dict):
-            for service, service_findings in findings.items():
+            for service_name, service_findings in findings.items():
                 if isinstance(service_findings, list):
                     total_findings += len(service_findings)
                     auto_fixable_count += sum(1 for f in service_findings if f.get("auto_safe", False))

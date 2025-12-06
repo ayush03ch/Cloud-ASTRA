@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Astra - AWS Security Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* SIDEBAR NAVIGATION */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .sidebar-header {
+            padding: 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+        
+        .nav-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        
+        .nav-item.active {
+            background: rgba(255,255,255,0.2);
+            border-left-color: #ffd700;
+        }
+        
+        .nav-icon {
+            font-size: 1.2em;
+        }
+        
+        .sidebar-footer {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        /* MAIN CONTENT AREA */
+        .main-container {
+            flex: 1;
+            display: flex;
+            gap: 0;
+            overflow: hidden;
+        }
+        
+        /* LEFT PANEL - FORMS & CONTENT */
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-right: 1px solid #e1e5e9;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            padding: 20px;
+            background: white;
+            border-bottom: 1px solid #e1e5e9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-header h2 {
+            color: #333;
+            font-size: 1.3em;
+        }
+        
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .service-screen {
+            display: none;
+            height: 100%;
+        }
+        
+        .service-screen.active {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* FORM STYLES */
+        .form-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .form-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .intent-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            margin-bottom: 8px;
+        }
+        
+        .intent-item input,
+        .intent-item select {
+            flex: 1;
+            margin: 0;
+            padding: 6px;
+        }
+        
+        .remove-intent-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        /* RIGHT PANEL - TERMINAL */
+        .right-panel {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            border-left: 1px solid #333;
+        }
+        
+        .terminal-header {
+            padding: 15px 20px;
+            background: #0a0a0a;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+        
+        .terminal-header h3 {
+            margin: 0;
+            font-size: 0.95em;
+            color: #00ff00;
+        }
+        
+        .terminal-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            overflow: hidden;
+        }
+        
+        .terminal-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .terminal-output-line {
+            margin-bottom: 8px;
+        }
+        
+        .terminal-output-line.error {
+            color: #ff6b6b;
+        }
+        
+        .terminal-output-line.success {
+            color: #51cf66;
+        }
+        
+        .terminal-output-line.warning {
+            color: #ffd43b;
+        }
+        
+        .terminal-output-line.info {
+            color: #74c0fc;
+        }
+        
+        .terminal-prompt {
+            padding: 10px 15px;
+            background: #0a0a0a;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .terminal-prompt::before {
+            content: '$ ';
+            color: #00ff00;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            color: #00ff00;
+            border: none;
+            outline: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+        }
+        
+        .terminal-input::placeholder {
+            color: #666;
+        }
+        
+        .terminal-actions {
+            padding: 10px 15px;
+            background: #0a0a0a;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .terminal-btn {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #444;
+            background: transparent;
+            color: #00ff00;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: 'Courier New', Courier, monospace;
+            transition: all 0.3s;
+        }
+        
+        .terminal-btn:hover {
+            background: #333;
+            border-color: #00ff00;
+        }
+        
+        .terminal-btn:active {
+            transform: scale(0.98);
+        }
+        
+        /* RESULTS SECTION */
+        .results-panel {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .results-panel.active {
+            display: flex;
+        }
+        
+        .results-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .result-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #28a745;
+            font-size: 13px;
+        }
+        
+        .result-item.warning {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+        
+        .result-item.error {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .result-item h4 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .result-item p {
+            margin-bottom: 4px;
+            color: #666;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading p {
+            color: #666;
+            font-size: 13px;
+        }
+        
+        /* SCROLLBAR STYLING */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #bbb;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #888;
+        }
+        
+        .right-panel ::-webkit-scrollbar-thumb {
+            background: #555;
+        }
+        
+        .right-panel ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .right-panel {
+                width: 350px;
+            }
+            
+            .sidebar {
+                width: 250px;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .right-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🛡️ Cloud Astra</h1>
+                <p>AWS Security</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-item active" onclick="switchService('s3')">
+                    <span class="nav-icon">🪣</span>
+                    <span>S3 Security</span>
+                </div>
+                <div class="nav-item" onclick="switchService('ec2')">
+                    <span class="nav-icon">💻</span>
+                    <span>EC2 Security</span>
+                </div>
+                <div class="nav-item" onclick="switchService('iam')">
+                    <span class="nav-icon">🔐</span>
+                    <span>IAM Management</span>
+                </div>
+                <div class="nav-item" onclick="switchService('dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div>v2.0.0</div>
+                <div style="font-size: 11px; margin-top: 8px;">Cloud Astra © 2025</div>
+            </div>
+        </aside>
+        
+        <!-- MAIN CONTENT -->
+        <div class="main-container">
+            <!-- LEFT PANEL -->
+            <div class="left-panel">
+                <div class="panel-header">
+                    <h2 id="panelTitle">S3 Security Scanner</h2>
+                    <button class="btn btn-secondary" onclick="goHome()" style="width: 100px;">← Home</button>
+                </div>
+                
+                <div class="panel-content">
+                    <!-- S3 SERVICE SCREEN -->
+                    <div class="service-screen active" id="s3-screen">
+                        <form id="scanForm" onsubmit="submitScan(event)">
+                            <div class="form-section">
+                                <h3>🔐 AWS Configuration</h3>
+                                <div class="form-group">
+                                    <label for="roleArn">IAM Role ARN</label>
+                                    <input type="text" id="roleArn" name="roleArn" 
+                                           placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                                    <div class="help-text">IAM role in the target AWS account</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="externalId">External ID</label>
+                                    <input type="text" id="externalId" name="externalId" 
+                                           value="my-s3-agent-2025">
+                                    <div class="help-text">Security measure for cross-account access</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="region">AWS Region</label>
+                                    <select id="region" name="region">
+                                        <option value="us-east-1">US East (N. Virginia)</option>
+                                        <option value="us-west-2">US West (Oregon)</option>
+                                        <option value="eu-west-1">Europe (Ireland)</option>
+                                        <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3>🎯 Bucket Intent</h3>
+                                <div class="form-group">
+                                    <label>Define bucket purposes</label>
+                                    <div id="intentMappings">
+                                        <div class="intent-item">
+                                            <input type="text" placeholder="Bucket name" name="bucketName[]" style="flex: 1.2;">
+                                            <select name="bucketIntent[]" style="flex: 1;">
+                                                <option value="">Auto-detect</option>
+                                                <option value="website hosting">🌐 Website</option>
+                                                <option value="data storage">📦 Data</option>
+                                                <option value="data archival">🗄️ Archival</option>
+                                            </select>
+                                            <button type="button" class="remove-intent-btn" onclick="removeIntent(this)">✕</button>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary" style="margin-top: 8px;" onclick="addIntentMapping()">+ Add Bucket</button>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3>⚙️ Options</h3>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="allowConversion" name="allowConversion" checked>
+                                    <label for="allowConversion">Allow bucket conversion</label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="autoFix" name="autoFix" checked>
+                                    <label for="autoFix">Enable auto-fixes</label>
+                                </div>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                <button type="submit" class="btn btn-primary">🚀 Scan</button>
+                                <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                            </div>
+                        </form>
+                        
+                        <div class="loading" id="loading">
+                            <div class="spinner"></div>
+                            <p id="loadingText">Scanning...</p>
+                        </div>
+                        
+                        <div class="results-panel" id="results-panel">
+                            <div class="results-content" id="resultsContent"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- EC2 SERVICE SCREEN -->
+                    <div class="service-screen" id="ec2-screen">
+                        <form id="ec2ScanForm" onsubmit="submitScan(event)">
+                            <div class="form-section">
+                                <h3>🔐 AWS Configuration</h3>
+                                <div class="form-group">
+                                    <label for="ec2RoleArn">IAM Role ARN</label>
+                                    <input type="text" id="ec2RoleArn" name="ec2RoleArn" 
+                                           placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                                    <div class="help-text">IAM role in the target AWS account</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ec2ExternalId">External ID</label>
+                                    <input type="text" id="ec2ExternalId" name="ec2ExternalId" 
+                                           value="my-ec2-agent-2025">
+                                    <div class="help-text">Security measure for cross-account access</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ec2Region">AWS Region</label>
+                                    <select id="ec2Region" name="ec2Region">
+                                        <option value="us-east-1">US East (N. Virginia)</option>
+                                        <option value="us-west-2">US West (Oregon)</option>
+                                        <option value="eu-west-1">Europe (Ireland)</option>
+                                        <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3>🎯 EC2 Filters</h3>
+                                <div class="form-group">
+                                    <label for="ec2Instances">Instance IDs (comma-separated)</label>
+                                    <input type="text" id="ec2Instances" name="ec2Instances" 
+                                           placeholder="i-1234567890abcdef0, i-0987654321fedcba0">
+                                    <div class="help-text">Leave empty to scan all instances</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ec2Tags">Tag Filter</label>
+                                    <input type="text" id="ec2Tags" name="ec2Tags" 
+                                           placeholder="Environment:production">
+                                    <div class="help-text">Format: Key:Value</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3>🔍 Security Checks</h3>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="ec2CheckSecurityGroups" name="ec2CheckSecurityGroups" checked>
+                                    <label for="ec2CheckSecurityGroups">Security Groups</label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="ec2CheckEBS" name="ec2CheckEBS" checked>
+                                    <label for="ec2CheckEBS">EBS Encryption</label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="ec2CheckBackups" name="ec2CheckBackups" checked>
+                                    <label for="ec2CheckBackups">Backups</label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="ec2CheckIMDSv2" name="ec2CheckIMDSv2" checked>
+                                    <label for="ec2CheckIMDSv2">IMDSv2</label>
+                                </div>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                <button type="submit" class="btn btn-primary">🚀 Scan</button>
+                                <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                            </div>
+                        </form>
+                        
+                        <div class="loading" id="ec2-loading">
+                            <div class="spinner"></div>
+                            <p id="ec2LoadingText">Scanning EC2 instances...</p>
+                        </div>
+                        
+                        <div class="results-panel" id="ec2-results-panel">
+                            <div class="results-content" id="ec2ResultsContent"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- IAM SERVICE SCREEN -->
+                    <div class="service-screen" id="iam-screen">
+                        <div class="form-section">
+                            <h3>🔐 IAM Management</h3>
+                            <p style="color: #666; margin-bottom: 15px;">IAM management features coming soon...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- DASHBOARD SCREEN -->
+                    <div class="service-screen" id="dashboard-screen">
+                        <div class="form-section">
+                            <h3>📊 Dashboard</h3>
+                            <p style="color: #666; margin-bottom: 15px;">Dashboard with overall security metrics coming soon...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RIGHT PANEL - TERMINAL -->
+            <div class="right-panel">
+                <div class="terminal-header">
+                    <h3>🖥️ Terminal</h3>
+                </div>
+                
+                <div class="terminal-container">
+                    <div class="terminal-output" id="terminalOutput">
+                        <div class="terminal-output-line info">╔════════════════════════════════════╗</div>
+                        <div class="terminal-output-line info">║  Cloud Astra Terminal v1.0         ║</div>
+                        <div class="terminal-output-line info">╚════════════════════════════════════╝</div>
+                        <div class="terminal-output-line info">Type 'help' for commands</div>
+                    </div>
+                    
+                    <div class="terminal-prompt">
+                        <input type="text" id="terminalInput" class="terminal-input" 
+                               placeholder="aws ec2 describe-instances"
+                               autocomplete="off">
+                    </div>
+                    
+                    <div class="terminal-actions">
+                        <button class="terminal-btn" onclick="executeCommand()">Execute</button>
+                        <button class="terminal-btn" onclick="clearTerminal()">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentService = 's3';
+        let commandHistory = [];
+        let historyIndex = -1;
+        
+        // Service Navigation
+        function switchService(service) {
+            // Update nav items
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.target.closest('.nav-item').classList.add('active');
+            
+            // Update screens
+            document.querySelectorAll('.service-screen').forEach(screen => screen.classList.remove('active'));
+            document.getElementById(service + '-screen').classList.add('active');
+            
+            // Update title
+            const titles = {
+                's3': '🪣 S3 Security Scanner',
+                'ec2': '💻 EC2 Security Scanner',
+                'iam': '🔐 IAM Management',
+                'dashboard': '📊 Dashboard'
+            };
+            document.getElementById('panelTitle').textContent = titles[service];
+            currentService = service;
+            
+            // Clear results
+            document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
+        }
+        
+        function goHome() {
+            switchService('s3');
+        }
+        
+        // Form Functions
+        function addIntentMapping() {
+            const container = document.getElementById('intentMappings');
+            const item = document.createElement('div');
+            item.className = 'intent-item';
+            item.innerHTML = `
+                <input type="text" placeholder="Bucket name" name="bucketName[]" style="flex: 1.2;">
+                <select name="bucketIntent[]" style="flex: 1;">
+                    <option value="">Auto-detect</option>
+                    <option value="website hosting">🌐 Website</option>
+                    <option value="data storage">📦 Data</option>
+                    <option value="data archival">🗄️ Archival</option>
+                </select>
+                <button type="button" class="remove-intent-btn" onclick="removeIntent(this)">✕</button>
+            `;
+            container.appendChild(item);
+        }
+        
+        function removeIntent(btn) {
+            if (document.querySelectorAll('.intent-item').length > 1) {
+                btn.parentElement.remove();
+            }
+        }
+        
+        function clearForm() {
+            const formId = currentService === 's3' ? 'scanForm' : 'ec2ScanForm';
+            document.getElementById(formId).reset();
+            document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
+        }
+        
+        async function submitScan(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            let data;
+            
+            if (currentService === 's3') {
+                data = {
+                    agent: 's3',
+                    role_arn: formData.get('roleArn'),
+                    external_id: formData.get('externalId'),
+                    region: formData.get('region'),
+                    allow_conversion: formData.get('allowConversion') === 'on',
+                    auto_fix: formData.get('autoFix') === 'on',
+                    user_intent_input: {}
+                };
+                
+                const bucketNames = formData.getAll('bucketName[]');
+                const bucketIntents = formData.getAll('bucketIntent[]');
+                
+                for (let i = 0; i < bucketNames.length; i++) {
+                    if (bucketNames[i].trim() && bucketIntents[i]) {
+                        data.user_intent_input[bucketNames[i].trim()] = bucketIntents[i];
+                    }
+                }
+            } else if (currentService === 'ec2') {
+                data = {
+                    agent: 'ec2',
+                    role_arn: formData.get('ec2RoleArn'),
+                    external_id: formData.get('ec2ExternalId'),
+                    region: formData.get('ec2Region'),
+                    auto_fix: true,
+                    ec2_instances: formData.get('ec2Instances') ? formData.get('ec2Instances').split(',').map(s => s.trim()).filter(s => s) : [],
+                    ec2_tags: formData.get('ec2Tags'),
+                    ec2_checks: {
+                        security_groups: formData.get('ec2CheckSecurityGroups') === 'on',
+                        ebs_encryption: formData.get('ec2CheckEBS') === 'on',
+                        backups: formData.get('ec2CheckBackups') === 'on',
+                        imdsv2: formData.get('ec2CheckIMDSv2') === 'on'
+                    }
+                };
+            }
+            
+            // Show loading
+            document.getElementById(currentService === 's3' ? 'loading' : 'ec2-loading').classList.add('active');
+            
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                document.getElementById(currentService === 's3' ? 'loading' : 'ec2-loading').classList.remove('active');
+                
+                displayResults(result);
+            } catch (error) {
+                document.getElementById(currentService === 's3' ? 'loading' : 'ec2-loading').classList.remove('active');
+                addTerminalOutput(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function displayResults(result) {
+            const resultsPanel = document.getElementById(currentService === 's3' ? 'results-panel' : 'ec2-results-panel');
+            const resultsContent = document.getElementById(currentService === 's3' ? 'resultsContent' : 'ec2ResultsContent');
+            
+            if (result.error) {
+                resultsContent.innerHTML = `<div class="result-item error"><h4>❌ Error</h4><p>${result.error}</p></div>`;
+            } else {
+                let html = `
+                    <div class="result-item">
+                        <h4>📊 Summary</h4>
+                        <p>Issues: ${result.findings_count || 0}</p>
+                        <p>Auto-fixes: ${result.auto_fixes_applied?.length || 0}</p>
+                        <p>Manual review: ${result.pending_fixes?.length || 0}</p>
+                    </div>
+                `;
+                
+                if (result.pending_fixes?.length > 0) {
+                    html += `
+                        <div class="result-item warning">
+                            <h4>⚠️ Manual Review</h4>
+                            ${result.pending_fixes.map(f => `<p>${f.resource}: ${f.issue}</p>`).join('')}
+                        </div>
+                    `;
+                }
+                
+                resultsContent.innerHTML = html;
+            }
+            
+            resultsPanel.classList.add('active');
+        }
+        
+        // Terminal Functions
+        function addTerminalOutput(text, type = 'info') {
+            const output = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = `terminal-output-line ${type}`;
+            line.textContent = text;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearTerminal() {
+            document.getElementById('terminalOutput').innerHTML = '';
+            document.getElementById('terminalInput').value = '';
+        }
+        
+        async function executeCommand() {
+            const input = document.getElementById('terminalInput');
+            const command = input.value.trim();
+            
+            if (!command) return;
+            
+            addTerminalOutput(`$ ${command}`, 'info');
+            input.value = '';
+            
+            if (command.toLowerCase() === 'help') {
+                addTerminalOutput('Available commands: aws ec2, aws s3, aws iam, etc.', 'info');
+                return;
+            }
+            
+            if (!command.toLowerCase().startsWith('aws')) {
+                addTerminalOutput('Only AWS CLI commands supported', 'error');
+                return;
+            }
+            
+            try {
+                let roleArn, externalId, region;
+                if (currentService === 's3') {
+                    roleArn = document.getElementById('roleArn').value;
+                    externalId = document.getElementById('externalId').value;
+                    region = document.getElementById('region').value;
+                } else {
+                    roleArn = document.getElementById('ec2RoleArn').value;
+                    externalId = document.getElementById('ec2ExternalId').value;
+                    region = document.getElementById('ec2Region').value;
+                }
+                
+                const response = await fetch('/api/terminal/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command, role_arn: roleArn, external_id: externalId, region })
+                });
+                
+                const result = await response.json();
+                if (result.stdout) addTerminalOutput(result.stdout, 'success');
+                if (result.stderr) addTerminalOutput(result.stderr, 'warning');
+                if (result.error) addTerminalOutput(result.error, 'error');
+            } catch (error) {
+                addTerminalOutput(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Enter key for terminal
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('terminalInput');
+            if (input) {
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') executeCommand();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

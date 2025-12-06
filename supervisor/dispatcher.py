@@ -1,76 +1,89 @@
 # supervisor/dispatcher.py
 from agents.s3_agent.s3_agent import S3Agent
-from agents.lambda_agents.lambda_agent import LambdaAgent
+from agents.ec2_agent.ec2_agent import EC2Agent
+from agents.iam_agent.iam_agent import IAMAgent
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Dispatcher:
     """
     Sends tasks to appropriate service agents.
-    Supports S3 and Lambda agents.
-    Routes based on resource types in user_intent_input or explicit service selection.
+    Supports S3, EC2, IAM, and future services.
     """
 
-    def __init__(self, creds, service=None):
+    def __init__(self, creds):
         self.creds = creds
-        self.service = service  # Explicit service selection from UI
 
-    def dispatch(self, user_intent_input=None):
+    def dispatch(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None):
+        """
+        Dispatch scan to appropriate service(s).
+        
+        Args:
+            user_intent_input: User's explicit intent for resources
+            service: Specific service to scan ('s3', 'ec2', 'iam', or None for all)
+            ec2_filters: Dict with instance_ids and tags filters for EC2
+            ec2_checks: Dict with check flags for EC2 (security_groups, ebs_encryption, etc.)
+            iam_scope: Scope for IAM scan ('account', 'users', 'roles', 'policies')
+            iam_checks: Dict with check flags for IAM (access_key_rotation, mfa_enforcement, etc.)
+        """
         results = {}
         
-        # Determine which services to scan based on user_intent_input
-        services_to_scan = self._determine_services(user_intent_input)
+        # Determine which services to scan
+        services_to_scan = []
+        if service:
+            services_to_scan = [service]
+        else:
+            services_to_scan = ['s3', 'ec2']  # Default: scan both
         
-        # Run S3 Agent if S3 resources are being scanned
+        # S3 Agent
         if 's3' in services_to_scan:
-            s3_agent = S3Agent(creds=self.creds)
-            results["s3"] = s3_agent.scan(user_intent_input=user_intent_input)
+            try:
+                s3_agent = S3Agent(creds=self.creds)
+                results["s3"] = s3_agent.scan(user_intent_input=user_intent_input)
+                logger.info("S3 scan completed successfully")
+            except Exception as e:
+                logger.error(f"S3 scan failed: {e}")
+                results["s3"] = []
         
-        # Run Lambda Agent if Lambda resources are being scanned
-        if 'lambda' in services_to_scan:
-            lambda_agent = LambdaAgent(creds=self.creds)
-            results["lambda"] = lambda_agent.analyze(user_intent_input=user_intent_input)
+        # EC2 Agent
+        if 'ec2' in services_to_scan:
+            try:
+                ec2_agent = EC2Agent(creds=self.creds)
+                
+                # Prepare scope for EC2 (instance IDs or tags filter)
+                scope = "all"
+                if ec2_filters:
+                    if ec2_filters.get('instance_ids'):
+                        scope = ec2_filters['instance_ids']
+                    elif ec2_filters.get('tags'):
+                        # For tag-based filtering, we'll use "all" and filter in EC2Agent later
+                        scope = "all"
+                
+                results["ec2"] = ec2_agent.scan(
+                    user_intent_input=user_intent_input,
+                    scope=scope
+                )
+                logger.info("EC2 scan completed successfully")
+            except Exception as e:
+                logger.error(f"EC2 scan failed: {e}")
+                results["ec2"] = []
         
-        # Default to S3 only if no specific service indicated
-        if not services_to_scan or not results:
-            s3_agent = S3Agent(creds=self.creds)
-            results["s3"] = s3_agent.scan(user_intent_input=user_intent_input)
+        # IAM Agent
+        if 'iam' in services_to_scan:
+            try:
+                iam_agent = IAMAgent(creds=self.creds)
+                
+                # Prepare scope for IAM
+                scope = iam_scope or "account"
+                
+                results["iam"] = iam_agent.scan(
+                    user_intent_input=user_intent_input,
+                    scope=scope
+                )
+                logger.info("IAM scan completed successfully")
+            except Exception as e:
+                logger.error(f"IAM scan failed: {e}")
+                results["iam"] = []
         
         return results
-    
-    def _determine_services(self, user_intent_input):
-        """
-        Determine which services to scan.
-        If explicit service was provided, use only that.
-        Otherwise, use heuristic detection based on resource names.
-        
-        Returns set of service names: {'s3', 'lambda', etc.}
-        """
-        # If explicit service was provided in __init__, use only that
-        if self.service:
-            return {self.service.lower()}
-        
-        if not user_intent_input:
-            # If no input specified, scan both
-            return {'s3', 'lambda'}
-        
-        services = set()
-        
-        # Check if any resource names look like Lambda functions
-        # Lambda functions typically: contain underscores, hyphens, no dots
-        # S3 buckets typically: contain dots, hyphens, lowercase only
-        for resource_name in user_intent_input.keys():
-            if resource_name == '_global_intent':
-                # Global intent applies to all services
-                return {'s3', 'lambda'}
-            
-            # Simple heuristics: if it looks like a function name, assume Lambda
-            # This is best-effort; the agents will handle what they can
-            if any(char in resource_name for char in ['_']):
-                services.add('lambda')
-            else:
-                services.add('s3')
-        
-        # If no definitive service identified, scan both
-        if not services:
-            services = {'s3', 'lambda'}
-        
-        return services

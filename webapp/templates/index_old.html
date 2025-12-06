@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Security Agent - Cloud Astra</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .form-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .intent-mapping {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .intent-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e1e5e9;
+        }
+        
+        .intent-item input[type="text"] {
+            flex: 1;
+            margin: 0;
+        }
+        
+        .intent-item select {
+            flex: 1;
+            margin: 0;
+        }
+        
+        .add-intent-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .add-intent-btn:hover {
+            background: #218838;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 150px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .results h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .result-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .result-item.warning {
+            border-left-color: #ffc107;
+        }
+        
+        .result-item.error {
+            border-left-color: #dc3545;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .help-text {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .manual-fix-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff9e6;
+            border-radius: 6px;
+            border: 1px solid #ffd700;
+        }
+        
+        .fix-instructions {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .fix-instructions h5 {
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 14px;
+        }
+        
+        .fix-instructions ul {
+            margin-left: 20px;
+            color: #6c757d;
+        }
+        
+        .fix-instructions li {
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+        
+        .apply-fix-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        
+        .apply-fix-btn:hover {
+            background: #138496;
+        }
+        
+        .apply-fix-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+        
+        .agent-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-button:hover {
+            color: #667eea;
+        }
+        
+        .agent-content {
+            display: none;
+        }
+        
+        .agent-content.active {
+            display: block;
+        }
+        
+        /* Terminal Styles */
+        .terminal-section {
+            margin-top: 40px;
+            border-top: 2px solid #e1e5e9;
+            padding-top: 30px;
+        }
+        
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .terminal-header h3 {
+            color: #333;
+            font-size: 1.2em;
+            margin: 0;
+        }
+        
+        .terminal-toggle-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.3s;
+        }
+        
+        .terminal-toggle-btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .terminal-toggle-btn.active {
+            background: #28a745;
+        }
+        
+        .terminal-container {
+            display: none;
+            background: #1e1e1e;
+            color: #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .terminal-container.active {
+            display: block;
+        }
+        
+        .terminal-output {
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .terminal-output.error {
+            color: #ff6b6b;
+        }
+        
+        .terminal-output.success {
+            color: #51cf66;
+        }
+        
+        .terminal-output.warning {
+            color: #ffd43b;
+        }
+        
+        .terminal-output.info {
+            color: #74c0fc;
+        }
+        
+        .terminal-prompt {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding: 10px;
+            background: #0a0a0a;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+        
+        .terminal-prompt::before {
+            content: '$ ';
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            color: #00ff00;
+            border: none;
+            outline: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+        }
+        
+        .terminal-input::placeholder {
+            color: #666;
+        }
+        
+        .terminal-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+            margin-left: 5px;
+        }
+        
+        .terminal-button:hover {
+            background: #5a6fd8;
+        }
+        
+        .terminal-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .command-history {
+            margin-top: 10px;
+            padding: 10px;
+            background: #0a0a0a;
+            border-radius: 4px;
+            border: 1px solid #444;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            padding: 5px;
+            color: #888;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+        
+        .history-item:hover {
+            background: #333;
+        }
+        
+        .clear-terminal-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+        
+        .clear-terminal-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Cloud Astra</h1>
+            <p>Intent-Aware AWS Security Scanner & Auto-Remediation</p>
+        </div>
+        
+        <div class="agent-tabs">
+            <button class="tab-button active" onclick="switchAgent('s3')" data-agent="s3">
+                🪣 S3 Security
+            </button>
+            <button class="tab-button" onclick="switchAgent('ec2')" data-agent="ec2">
+                💻 EC2 Security
+            </button>
+        </div>
+        
+        <form id="scanForm">
+            <!-- S3 Agent Content -->
+            <div class="agent-content active" id="s3-content">
+                <div class="form-section">
+                    <h3>🔐 AWS Configuration</h3>
+                    <div class="form-group">
+                        <label for="roleArn">Target Account IAM Role ARN:</label>
+                        <input type="text" id="roleArn" name="roleArn" 
+                               value=""  
+                               placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                        <div class="help-text">IAM role in the target AWS account that the agent will assume</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="externalId">External ID:</label>
+                        <input type="text" id="externalId" name="externalId" 
+                               value="my-s3-agent-2025" 
+                               placeholder="External ID for role assumption">
+                        <div class="help-text">Additional security measure for cross-account role assumption</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="region">AWS Region:</label>
+                        <select id="region" name="region">
+                            <option value="us-east-1" selected>US East (N. Virginia)</option>
+                            <option value="us-west-2">US West (Oregon)</option>
+                            <option value="eu-west-1">Europe (Ireland)</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>🎯 Bucket Intent Configuration</h3>
+                    <p style="margin-bottom: 20px; color: #666;">
+                        Specify the intended purpose for each bucket to guide intelligent fixes:
+                    </p>
+                    
+                    <div id="intentMappings">
+                        <div class="intent-item">
+                            <input type="text" placeholder="Bucket name (e.g., my-website-bucket)" 
+                                   name="bucketName[]" style="flex: 1.2;">
+                            <select name="bucketIntent[]" style="flex: 1;">
+                                <option value="">Auto-detect</option>
+                                <option value="website hosting">🌐 Website Hosting</option>
+                                <option value="data storage">📦 Data Storage</option>
+                                <option value="data archival">🗄️ Data Archival</option>
+                                <option value="backup storage">💾 Backup Storage</option>
+                                <option value="log storage">📊 Log Storage</option>
+                            </select>
+                            <button type="button" class="remove-intent-btn" onclick="removeIntent(this)" 
+                                    style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="add-intent-btn" onclick="addIntentMapping()">
+                        ➕ Add Bucket Intent
+                    </button>
+                    
+                    <div class="help-text" style="margin-top: 15px;">
+                        💡 <strong>Smart Intent Detection:</strong> Leave intent as "Auto-detect" to let the system analyze bucket configuration, 
+                        contents, and naming patterns to determine purpose automatically.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- EC2 Agent Content -->
+            <div class="agent-content" id="ec2-content">
+                <div class="form-section">
+                    <h3>🔐 AWS Configuration</h3>
+                    <div class="form-group">
+                        <label for="ec2RoleArn">Target Account IAM Role ARN:</label>
+                        <input type="text" id="ec2RoleArn" name="ec2RoleArn" 
+                               value=""  
+                               placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                        <div class="help-text">IAM role in the target AWS account that the agent will assume</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ec2ExternalId">External ID:</label>
+                        <input type="text" id="ec2ExternalId" name="ec2ExternalId" 
+                               value="my-ec2-agent-2025" 
+                               placeholder="External ID for role assumption">
+                        <div class="help-text">Additional security measure for cross-account role assumption</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ec2Region">AWS Region:</label>
+                        <select id="ec2Region" name="ec2Region">
+                            <option value="us-east-1" selected>US East (N. Virginia)</option>
+                            <option value="us-west-2">US West (Oregon)</option>
+                            <option value="eu-west-1">Europe (Ireland)</option>
+                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>🎯 EC2 Instance Filtering</h3>
+                    <p style="margin-bottom: 20px; color: #666;">
+                        Specify filters to target specific EC2 instances for security scanning:
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="ec2Instances">Instance IDs (optional, comma-separated):</label>
+                        <input type="text" id="ec2Instances" name="ec2Instances" 
+                               placeholder="i-1234567890abcdef0, i-0987654321fedcba0"
+                               style="font-family: monospace; font-size: 13px;">
+                        <div class="help-text">Leave empty to scan all instances, or specify instance IDs</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ec2Tags">Tag Filter (optional):</label>
+                        <input type="text" id="ec2Tags" name="ec2Tags" 
+                               placeholder="e.g., Environment:production"
+                               style="font-family: monospace; font-size: 13px;">
+                        <div class="help-text">Filter instances by tags (format: Key:Value)</div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>🔍 EC2 Security Checks</h3>
+                    <p style="margin-bottom: 20px; color: #666;">
+                        Select which security checks to perform:
+                    </p>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="ec2CheckSecurityGroups" name="ec2CheckSecurityGroups" checked>
+                        <label for="ec2CheckSecurityGroups" style="margin: 0;">
+                            🔒 Security Group Analysis (check for open ports)
+                        </label>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="ec2CheckEBS" name="ec2CheckEBS" checked>
+                        <label for="ec2CheckEBS" style="margin: 0;">
+                            💾 EBS Encryption Check (verify volume encryption)
+                        </label>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="ec2CheckBackups" name="ec2CheckBackups" checked>
+                        <label for="ec2CheckBackups" style="margin: 0;">
+                            🔄 Backup Status (check for automated backups)
+                        </label>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="ec2CheckIMDSv2" name="ec2CheckIMDSv2" checked>
+                        <label for="ec2CheckIMDSv2" style="margin: 0;">
+                            🛡️ IMDSv2 Enforcement (ensure metadata service v2)
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>⚙️ Scan Options</h3>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="allowConversion" name="allowConversion" checked>
+                    <label for="allowConversion" style="margin: 0;">
+                        🔄 Allow bucket purpose conversion (e.g., website → data storage if no HTML files)
+                    </label>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="autoFix" name="autoFix" checked>
+                    <label for="autoFix" style="margin: 0;">
+                        🔧 Enable automatic fixes for safe security issues
+                    </label>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="detailedLogging" name="detailedLogging">
+                    <label for="detailedLogging" style="margin: 0;">
+                        📝 Enable detailed logging and reasoning output
+                    </label>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button type="submit" class="btn btn-primary">
+                    🚀 Start Security Scan
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                    🧹 Clear Form
+                </button>
+            </div>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p id="loadingText">Scanning AWS account and applying intelligent fixes...</p>
+            <p id="loadingSubtext" style="color: #666; font-size: 14px; margin-top: 10px;">
+                This may take a few moments while we analyze your buckets and apply context-aware security fixes.
+            </p>
+        </div>
+        
+        <div class="results" id="results">
+            <h3>📊 Scan Results</h3>
+            <div id="resultsContent"></div>
+        </div>
+        
+        <!-- Terminal Section -->
+        <div class="terminal-section">
+            <div class="terminal-header">
+                <h3>🖥️ AWS CLI Terminal</h3>
+                <button class="terminal-toggle-btn" id="terminalToggle" onclick="toggleTerminal()">
+                    Open Terminal
+                </button>
+            </div>
+            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                Run AWS CLI commands directly to remediate issues or manage your infrastructure. Commands execute with the assumed role credentials.
+            </p>
+            
+            <div class="terminal-container" id="terminalContainer">
+                <div class="terminal-output info">
+                    ╔════════════════════════════════════════════════════════════╗
+                    ║         Cloud Astra AWS CLI Terminal v1.0                  ║
+                    ║    Type 'help' for available commands or AWS CLI syntax    ║
+                    ╚════════════════════════════════════════════════════════════╝
+                </div>
+                
+                <div id="terminalOutput"></div>
+                
+                <div class="terminal-prompt">
+                    <input type="text" id="terminalInput" class="terminal-input" 
+                           placeholder="e.g., aws ec2 describe-instances --region us-east-1"
+                           autocomplete="off">
+                    <button class="terminal-button" onclick="executeCommand()">Execute</button>
+                    <button class="clear-terminal-btn" onclick="clearTerminal()">Clear</button>
+                </div>
+                
+                <div class="command-history" id="commandHistory" style="display: none;">
+                    <div style="color: #888; font-size: 11px; margin-bottom: 8px;">📜 Command History</div>
+                    <div id="historyList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Agent switching functionality
+        function switchAgent(agent) {
+            // Hide all agent contents
+            document.getElementById('s3-content').classList.remove('active');
+            document.getElementById('ec2-content').classList.remove('active');
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected agent content
+            if (agent === 's3') {
+                document.getElementById('s3-content').classList.add('active');
+            } else if (agent === 'ec2') {
+                document.getElementById('ec2-content').classList.add('active');
+            }
+            
+            // Set active tab button
+            document.querySelector(`[data-agent="${agent}"]`).classList.add('active');
+            
+            // Reset results
+            document.getElementById('results').classList.remove('show');
+        }
+        
+        function addIntentMapping() {
+            const container = document.getElementById('intentMappings');
+            const newItem = document.createElement('div');
+            newItem.className = 'intent-item';
+            newItem.innerHTML = `
+                <input type="text" placeholder="Bucket name" name="bucketName[]" style="flex: 1.2;">
+                <select name="bucketIntent[]" style="flex: 1;">
+                    <option value="">Auto-detect</option>
+                    <option value="website hosting">🌐 Website Hosting</option>
+                    <option value="data storage">📦 Data Storage</option>
+                    <option value="data archival">🗄️ Data Archival</option>
+                    <option value="backup storage">💾 Backup Storage</option>
+                    <option value="log storage">📊 Log Storage</option>
+                </select>
+                <button type="button" class="remove-intent-btn" onclick="removeIntent(this)" 
+                        style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
+            `;
+            container.appendChild(newItem);
+        }
+        
+        function removeIntent(button) {
+            const container = document.getElementById('intentMappings');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+            }
+        }
+        
+        function clearForm() {
+            document.getElementById('scanForm').reset();
+            document.getElementById('results').classList.remove('show');
+            
+            // Reset intent mappings to one item
+            const container = document.getElementById('intentMappings');
+            container.innerHTML = `
+                <div class="intent-item">
+                    <input type="text" placeholder="Bucket name (e.g., my-website-bucket)" 
+                           name="bucketName[]" style="flex: 1.2;">
+                    <select name="bucketIntent[]" style="flex: 1;">
+                        <option value="">Auto-detect</option>
+                        <option value="website hosting">🌐 Website Hosting</option>
+                        <option value="data storage">📦 Data Storage</option>
+                        <option value="data archival">🗄️ Data Archival</option>
+                        <option value="backup storage">💾 Backup Storage</option>
+                        <option value="log storage">📊 Log Storage</option>
+                    </select>
+                    <button type="button" class="remove-intent-btn" onclick="removeIntent(this)" 
+                            style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">✕</button>
+                </div>
+            `;
+        }
+        
+        document.getElementById('scanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Detect which agent is active
+            const activeAgent = document.getElementById('s3-content').classList.contains('active') ? 's3' : 'ec2';
+            
+            // Show loading with agent-specific message
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+            
+            if (activeAgent === 's3') {
+                document.getElementById('loadingText').textContent = 'Scanning S3 buckets and applying intelligent fixes...';
+                document.getElementById('loadingSubtext').textContent = 'This may take a few moments while we analyze your buckets and apply context-aware security fixes.';
+            } else {
+                document.getElementById('loadingText').textContent = 'Scanning EC2 instances and checking security configurations...';
+                document.getElementById('loadingSubtext').textContent = 'This may take a few moments while we analyze your instances and apply context-aware security fixes.';
+            }
+            
+            // Collect form data based on active agent
+            const formData = new FormData(e.target);
+            
+            let data;
+            if (activeAgent === 's3') {
+                // S3 Agent Data
+                data = {
+                    agent: 's3',
+                    role_arn: formData.get('roleArn'),
+                    external_id: formData.get('externalId'),
+                    region: formData.get('region'),
+                    allow_conversion: formData.get('allowConversion') === 'on',
+                    auto_fix: formData.get('autoFix') === 'on',
+                    detailed_logging: formData.get('detailedLogging') === 'on',
+                    user_intent_input: {}
+                };
+                
+                // Collect bucket intents
+                const bucketNames = formData.getAll('bucketName[]');
+                const bucketIntents = formData.getAll('bucketIntent[]');
+                
+                for (let i = 0; i < bucketNames.length; i++) {
+                    if (bucketNames[i].trim() && bucketIntents[i]) {
+                        data.user_intent_input[bucketNames[i].trim()] = bucketIntents[i];
+                    }
+                }
+            } else {
+                // EC2 Agent Data
+                data = {
+                    agent: 'ec2',
+                    role_arn: formData.get('ec2RoleArn'),
+                    external_id: formData.get('ec2ExternalId'),
+                    region: formData.get('ec2Region'),
+                    allow_conversion: formData.get('allowConversion') === 'on',
+                    auto_fix: formData.get('autoFix') === 'on',
+                    detailed_logging: formData.get('detailedLogging') === 'on',
+                    ec2_instances: formData.get('ec2Instances') ? formData.get('ec2Instances').split(',').map(s => s.trim()).filter(s => s) : [],
+                    ec2_tags: formData.get('ec2Tags'),
+                    ec2_checks: {
+                        security_groups: formData.get('ec2CheckSecurityGroups') === 'on',
+                        ebs_encryption: formData.get('ec2CheckEBS') === 'on',
+                        backups: formData.get('ec2CheckBackups') === 'on',
+                        imdsv2: formData.get('ec2CheckIMDSv2') === 'on'
+                    }
+                };
+            }
+            
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                // Hide loading
+                document.getElementById('loading').classList.remove('show');
+                
+                // Show results
+                displayResults(result);
+                
+            } catch (error) {
+                document.getElementById('loading').classList.remove('show');
+                displayError('Connection failed. Make sure the backend server is running.');
+            }
+        });
+        
+        function displayResults(result) {
+            const resultsContent = document.getElementById('resultsContent');
+            const results = document.getElementById('results');
+            
+            if (result.error) {
+                resultsContent.innerHTML = `
+                    <div class="result-item error">
+                        <h4>❌ Error</h4>
+                        <p>${result.error}</p>
+                    </div>
+                `;
+            } else {
+                let html = `
+                    <div class="result-item">
+                        <h4>📊 Scan Summary</h4>
+                        <p><strong>Agent:</strong> ${result.agent === 'ec2' ? '💻 EC2' : '🪣 S3'}</p>
+                        <p><strong>Issues Found:</strong> ${result.findings_count || 0}</p>
+                        <p><strong>Auto-fixes Applied:</strong> ${result.auto_fixes_applied?.length || 0}</p>
+                        <p><strong>Manual Reviews Needed:</strong> ${result.pending_fixes?.length || 0}</p>
+                        ${result.auto_fix_summary?.success_rate ? `
+                            <p><strong>Auto-fix Success Rate:</strong> ${result.auto_fix_summary.success_rate.toFixed(1)}%</p>
+                        ` : ''}
+                    </div>
+                `;
+                
+                if (result.auto_fixes_applied?.length > 0) {
+                    html += `
+                        <div class="result-item">
+                            <h4>✅ Auto-fixes Applied</h4>
+                            ${result.auto_fixes_applied.map(fix => `
+                                <p>• <strong>${fix.resource}:</strong> ${fix.status} - ${fix.details || 'Applied successfully'}</p>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                if (result.pending_fixes?.length > 0) {
+                    html += `
+                        <div class="result-item warning">
+                            <h4>⚠️ Manual Review Required</h4>
+                            ${result.pending_fixes.map((fix, index) => `
+                                <div class="manual-fix-item">
+                                    <p><strong>${fix.resource}:</strong> ${fix.issue}</p>
+                                    ${fix.fix_instructions ? `
+                                        <div class="fix-instructions">
+                                            <h5>🔧 How to Fix:</h5>
+                                            <ul>
+                                                ${fix.fix_instructions.map(instruction => `<li>${instruction}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    ` : ''}
+                                    ${fix.can_auto_fix ? `
+                                        <button class="apply-fix-btn" onclick="applyManualFix('${fix.resource}', '${fix.fix_type}', ${index})">
+                                            🤖 Let Agent Fix This
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                // S3-specific results
+                if (result.agent === 's3' && result.intent_decisions?.length > 0) {
+                    html += `
+                        <div class="result-item">
+                            <h4>🎯 Intent Detection Results</h4>
+                            ${result.intent_decisions.map(decision => `
+                                <p>• <strong>${decision.resource}:</strong> ${decision.intent} (confidence: ${decision.confidence})</p>
+                                <p style="margin-left: 20px; color: #666; font-size: 0.9em;">${decision.reasoning}</p>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                // EC2-specific results
+                if (result.agent === 'ec2' && result.instance_summary) {
+                    html += `
+                        <div class="result-item">
+                            <h4>💻 EC2 Instance Summary</h4>
+                            ${Object.entries(re,sult.instance_summary).map(([instanceId, summary]) => `
+                                <div style="margin-bottom: 15px; padding: 10px; background: #f0f0f0; border-radius: 4px;">
+                                    <p><strong>Instance:</strong> ${instanceId}</p>
+                                    <p><strong>Issues Found:</strong> ${summary.issues_count}</p>
+                                    <p><strong>Check Types:</strong> ${summary.check_types.join(', ')}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                resultsContent.innerHTML = html;
+            }
+            
+            results.classList.add('show');
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function displayError(message) {
+            const resultsContent = document.getElementById('resultsContent');
+            const results = document.getElementById('results');
+            
+            resultsContent.innerHTML = `
+                <div class="result-item error">
+                    <h4>❌ Connection Error</h4>
+                    <p>${message}</p>
+                    <p style="margin-top: 10px; font-size: 14px;">
+                        Make sure to start the backend server with: <code>python webapp/app.py</code>
+                    </p>
+                </div>
+            `;
+            
+            results.classList.add('show');
+        }
+        
+        async function applyManualFix(resource, fixType, index) {
+            const button = event.target;
+            const originalText = button.textContent;
+            
+            // Disable button and show loading
+            button.disabled = true;
+            button.textContent = '🔄 Applying Fix...';
+            
+            try {
+                // Detect which agent is active
+                const activeAgent = document.getElementById('s3-content').classList.contains('active') ? 's3' : 'ec2';
+                
+                // Get current form data based on active agent
+                let roleArn, externalId, region;
+                
+                if (activeAgent === 's3') {
+                    roleArn = document.getElementById('roleArn').value;
+                    externalId = document.getElementById('externalId').value;
+                    region = document.getElementById('region').value;
+                } else {
+                    roleArn = document.getElementById('ec2RoleArn').value;
+                    externalId = document.getElementById('ec2ExternalId').value;
+                    region = document.getElementById('ec2Region').value;
+                }
+                
+                // Send fix request
+                const response = await fetch('/api/apply-manual-fix', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        agent: activeAgent,
+                        role_arn: roleArn,
+                        external_id: externalId,
+                        region: region,
+                        resource: resource,
+                        fix_type: fixType
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    button.textContent = '✅ Fixed!';
+                    button.style.background = '#28a745';
+                    
+                    // Show success message
+                    const fixItem = button.closest('.manual-fix-item');
+                    const successMsg = document.createElement('div');
+                    successMsg.style.cssText = 'margin-top: 10px; padding: 8px; background: #d4edda; color: #155724; border-radius: 4px; font-size: 13px;';
+                    successMsg.innerHTML = `✅ ${result.message || 'Fix applied successfully!'}`;
+                    fixItem.appendChild(successMsg);
+                    
+                } else {
+                    throw new Error(result.error || 'Fix failed');
+                }
+                
+            } catch (error) {
+                console.error('Fix error:', error);
+                button.disabled = false;
+                button.textContent = originalText;
+                
+                // Show error message
+                const fixItem = button.closest('.manual-fix-item');
+                const errorMsg = document.createElement('div');
+                errorMsg.style.cssText = 'margin-top: 10px; padding: 8px; background: #f8d7da; color: #721c24; border-radius: 4px; font-size: 13px;';
+                errorMsg.innerHTML = `❌ ${error.message}`;
+                fixItem.appendChild(errorMsg);
+            }
+        }
+        
+        // Terminal Functions
+        let commandHistory = [];
+        let historyIndex = -1;
+        
+        function toggleTerminal() {
+            const container = document.getElementById('terminalContainer');
+            const toggle = document.getElementById('terminalToggle');
+            
+            container.classList.toggle('active');
+            toggle.classList.toggle('active');
+            toggle.textContent = container.classList.contains('active') ? 'Close Terminal' : 'Open Terminal';
+            
+            if (container.classList.contains('active')) {
+                document.getElementById('terminalInput').focus();
+            }
+        }
+        
+        function addTerminalOutput(text, type = 'info') {
+            const output = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = `terminal-output ${type}`;
+            line.textContent = text;
+            output.appendChild(line);
+            
+            // Auto-scroll to bottom
+            const container = document.getElementById('terminalContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function clearTerminal() {
+            document.getElementById('terminalOutput').innerHTML = '';
+            document.getElementById('terminalInput').value = '';
+            historyIndex = -1;
+        }
+        
+        function addToHistory(command) {
+            commandHistory.unshift(command);
+            if (commandHistory.length > 50) {
+                commandHistory.pop(); // Keep only last 50 commands
+            }
+            updateHistoryDisplay();
+            historyIndex = -1;
+        }
+        
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('historyList');
+            const historyContainer = document.getElementById('commandHistory');
+            
+            if (commandHistory.length === 0) {
+                historyContainer.style.display = 'none';
+                return;
+            }
+            
+            historyContainer.style.display = 'block';
+            historyList.innerHTML = commandHistory
+                .slice(0, 10)
+                .map((cmd, idx) => `
+                    <div class="history-item" onclick="useHistoryCommand(${idx})">
+                        ${cmd}
+                    </div>
+                `)
+                .join('');
+        }
+        
+        function useHistoryCommand(idx) {
+            document.getElementById('terminalInput').value = commandHistory[idx];
+            document.getElementById('terminalInput').focus();
+        }
+        
+        // Handle up/down arrow keys for history navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('terminalInput');
+            if (input) {
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (historyIndex < commandHistory.length - 1) {
+                            historyIndex++;
+                            this.value = commandHistory[historyIndex];
+                        }
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (historyIndex > 0) {
+                            historyIndex--;
+                            this.value = commandHistory[historyIndex];
+                        } else {
+                            this.value = '';
+                            historyIndex = -1;
+                        }
+                    } else if (e.key === 'Enter') {
+                        executeCommand();
+                    }
+                });
+            }
+        });
+        
+        async function executeCommand() {
+            const input = document.getElementById('terminalInput');
+            const command = input.value.trim();
+            
+            if (!command) return;
+            
+            // Display the command being executed
+            addTerminalOutput(`$ ${command}`, 'info');
+            
+            // Add to history
+            addToHistory(command);
+            
+            // Clear input
+            input.value = '';
+            
+            // Check if command is a help command
+            if (command.toLowerCase() === 'help') {
+                displayHelp();
+                return;
+            }
+            
+            // Validate command starts with 'aws'
+            if (!command.toLowerCase().startsWith('aws')) {
+                addTerminalOutput('Error: Only AWS CLI commands are supported. Type "help" for more information.', 'error');
+                return;
+            }
+            
+            try {
+                // Get current form data for credentials context
+                const activeAgent = document.getElementById('s3-content').classList.contains('active') ? 's3' : 'ec2';
+                let roleArn, externalId, region;
+                
+                if (activeAgent === 's3') {
+                    roleArn = document.getElementById('roleArn').value;
+                    externalId = document.getElementById('externalId').value;
+                    region = document.getElementById('region').value;
+                } else {
+                    roleArn = document.getElementById('ec2RoleArn').value;
+                    externalId = document.getElementById('ec2ExternalId').value;
+                    region = document.getElementById('ec2Region').value;
+                }
+                
+                if (!roleArn) {
+                    addTerminalOutput('Error: Please configure AWS credentials in the form above first.', 'error');
+                    return;
+                }
+                
+                // Send command to backend
+                const response = await fetch('/api/terminal/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        command: command,
+                        role_arn: roleArn,
+                        external_id: externalId,
+                        region: region
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    if (result.stdout) {
+                        addTerminalOutput(result.stdout, 'success');
+                    }
+                    if (result.stderr) {
+                        addTerminalOutput(result.stderr, 'warning');
+                    }
+                    if (result.error) {
+                        addTerminalOutput(result.error, 'error');
+                    }
+                } else {
+                    addTerminalOutput(result.error || 'Command execution failed', 'error');
+                }
+                
+            } catch (error) {
+                addTerminalOutput(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function displayHelp() {
+            const helpText = `
+📚 Cloud Astra AWS CLI Terminal - Help
+
+SUPPORTED FEATURES:
+  • Execute AWS CLI commands with assumed role credentials
+  • Commands run in the context of your configured AWS account
+  • Results are displayed in real-time
+
+COMMON COMMANDS:
+
+EC2 Management:
+  aws ec2 describe-instances --region us-east-1
+  aws ec2 describe-security-groups --region us-east-1
+  aws ec2 modify-instance-attribute --instance-id i-1234567890abcdef0 --no-source-dest-check
+  aws ec2 authorize-security-group-ingress --group-id sg-123456 --protocol tcp --port 443 --cidr 0.0.0.0/0
+
+S3 Management:
+  aws s3 ls
+  aws s3api get-bucket-encryption --bucket my-bucket
+  aws s3api put-bucket-versioning --bucket my-bucket --versioning-configuration Status=Enabled
+
+Security & Compliance:
+  aws ec2 describe-volumes --region us-east-1
+  aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --region us-east-1
+  aws iam list-users
+  aws iam get-user-policy --user-name username --policy-name policyname
+
+TIPS:
+  • Use arrow keys (↑/↓) to navigate command history
+  • All commands execute with assumed role credentials
+  • Some commands may require specific IAM permissions
+  • Type 'clear' to clear terminal output
+
+SECURITY:
+  ⚠️  Use with caution - commands execute directly on your AWS account
+  ⚠️  Only run commands from trusted sources
+  ⚠️  Review CloudTrail logs for all executed commands
+
+For full AWS CLI documentation, visit: https://docs.aws.amazon.com/cli/
+            `;
+            
+            addTerminalOutput(helpText, 'info');
+        }
+    </script>
+</body>
+</html>
