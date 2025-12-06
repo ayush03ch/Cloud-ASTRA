@@ -16,8 +16,13 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 @app.route('/')
-def index():
-    """Serve the main web interface."""
+def landing():
+    """Serve the landing page."""
+    return render_template('landing.html')
+
+@app.route('/dashboard')
+def dashboard():
+    """Serve the main dashboard interface."""
     return render_template('index.html')
 
 @app.route('/api/scan', methods=['POST'])

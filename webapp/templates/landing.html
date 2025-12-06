@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cloud Astra</title>
+    <style>
+        :root{
+            --bg1:#0A0A0B;
+            --bg2:#1a1a2e;
+            --muted:#A1A1A6;
+            --card-dark:#18181B;
+            --accent1:#6366F1;
+            --accent2:#818CF8;
+            --glass: rgba(255,255,255,0.05); 
+        }
+
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;font-family:-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,sans-serif;background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2)100%);color:#FAFAFA;}
+        .landing-wrapper{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;gap:28px}
+
+        /* HERO */
+        .hero{display:flex;flex-direction:column;align-items:center;gap:6px}
+        .hero-logo{font-size:56px;animation:float 3s ease-in-out infinite}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+        .hero-title{font-weight:700;font-size:40px;background:linear-gradient(135deg,var(--accent1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .hero-sub{color:var(--muted);font-size:14px}
+
+        /* Carousel outer viewport */
+        .carousel-viewport{width:100%;max-width:920px;height:420px;position:relative;perspective:1400px;overflow:visible;display:flex;align-items:center;justify-content:center}
+        .carousel{width:680px;height:100%;position:relative;transform-style:preserve-3d;overflow:visible}
+
+        /* Card base */
+        .card{
+            position:absolute;
+            left:50%;
+            top:50%;
+            transform-style:preserve-3d;
+            transform-origin:center center;
+            width:240px;
+            height:340px;
+            border-radius:14px;
+            padding:18px;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:flex-start;
+            text-align:center;
+            background:linear-gradient(180deg,var(--card-dark),#27272A);
+            border:1px solid rgba(255,255,255,0.03);
+            color:#EEE;
+            box-shadow:0 10px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+            transition: transform 850ms cubic-bezier(.2,.9,.25,1), opacity 650ms ease, filter 650ms ease;
+            cursor:pointer;
+            user-select:none;
+            will-change:transform,opacity,filter;
+        }
+
+        .card-inner{width:100%;height:100%;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:18px;backdrop-filter: blur(4px);transition:transform 650ms cubic-bezier(.2,.9,.25,1)}
+
+        .card .icon{font-size:66px;margin-top:8px;margin-bottom:10px;transition:transform 650ms}
+        .card .title{font-size:18px;font-weight:700;margin-bottom:8px;color:var(--muted);transition:transform 650ms}
+        .card .desc{font-size:13px;color:#bdbdbd;line-height:1.5;padding:0 6px}
+
+        /* Visible positions: left, center, right */
+        .pos0{ /* center */
+            z-index:40;
+            opacity:1;
+            transform: translate3d(-50%, -50%, 220px) scale(1.06);
+            width:280px;height:360px;
+            border:2px solid rgba(129,140,248,0.95);
+            background:linear-gradient(180deg,#4F46E5,#6366F1 50%,#818CF8);
+            box-shadow: 0 30px 80px rgba(99,102,241,0.35), 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .pos--1{ /* left */
+            z-index:35;
+            opacity:0.95;
+            transform: translate3d(calc(-50% - 220px), -50%, 70px) rotateY(16deg) scale(0.86);
+            box-shadow: 0 18px 45px rgba(0,0,0,0.55);
+            filter: saturate(.95);
+        }
+        .pos1{ /* right */
+            z-index:35;
+            opacity:0.95;
+            transform: translate3d(calc(-50% + 220px), -50%, 70px) rotateY(-16deg) scale(0.86);
+            box-shadow: 0 18px 45px rgba(0,0,0,0.55);
+            filter: saturate(.95);
+        }
+
+        /* hidden/faded */
+        .out{
+            opacity:0;
+            transform: translate3d(-50%,-50%,-120px) scale(0.56);
+            pointer-events:none;
+            z-index:5;
+        }
+
+        /* subtle hover on center */
+        .card.pos0:hover .card-inner{transform:translateY(-8px) scale(1.01)}
+
+        /* Parallax layers inside card */
+        .parallax-layer{transition:transform 650ms cubic-bezier(.2,.9,.25,1);will-change:transform}
+
+        /* Hints & footer */
+        .hints{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:13px}
+        .controls{display:flex;gap:12px;align-items:center}
+        .btn{background:var(--glass);border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+        .btn:active{transform:translateY(1px)}
+        .carousel-viewport:focus{outline:none}
+
+        /* Responsive */
+        @media (max-width:860px){
+            .carousel{width:92%}
+            .pos--1{transform: translate3d(calc(-50% - 160px), -50%, 50px) rotateY(14deg) scale(0.86)}
+            .pos1{transform: translate3d(calc(-50% + 160px), -50%, 50px) rotateY(-14deg) scale(0.86)}
+            .pos0{width:280px;height:360px}
+            .card{width:220px;height:300px;padding:14px}
+            .card .icon{font-size:54px}
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-wrapper">
+        <div class="hero">
+            <div class="hero-logo">🛡️</div>
+            <div class="hero-title">Cloud Astra</div>
+            <div class="hero-sub">Intent-Aware AWS Security Management</div>
+        </div>
+
+        <div class="carousel-viewport" id="viewport" tabindex="0" aria-label="Cloud Astra services carousel">
+            <div class="carousel" id="carousel"></div>
+        </div>
+
+        <div class="hints">
+            <div class="controls">
+                <button class="btn" id="prevBtn">◀ Prev</button>
+                <button class="btn" id="nextBtn">Next ▶</button>
+            </div>
+            <div style="width:18px"></div>
+            <div style="color:var(--muted)">Mouse wheel / arrows / hover side cards. Center = click to continue.</div>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const services = [
+            { id: 's3', icon: '🪣', title: 'S3 Security', description: 'Encryption, versioning, public access, and website hosting management' },
+            { id: 'ec2', icon: '💻', title: 'EC2 Security', description: 'Security groups, EBS encryption, backups, and IMDSv2 validation' },
+            { id: 'iam', icon: '🔐', title: 'IAM Management', description: 'Access keys, MFA enforcement, inactive users, and privilege analysis' },
+            { id: 'lambda', icon: '⚡', title: 'Lambda Security', description: 'Timeout optimization, memory allocation, logging, and env vars' }
+        ];
+
+        const carousel = document.getElementById('carousel');
+        let current = 0;
+        const total = services.length;
+        let animating = false;
+
+        function createCard(service, idx) {
+            const el = document.createElement('div');
+            el.className = 'card out';
+            el.dataset.index = idx;
+            el.innerHTML = `
+                <div class="card-inner">
+                    <div class="parallax-layer icon">${service.icon}</div>
+                    <div class="parallax-layer title">${service.title}</div>
+                    <div class="parallax-layer desc">${service.description}</div>
+                </div>
+            `;
+            el.addEventListener('click', () => {
+                if (el.classList.contains('pos0')) {
+                    window.location.href = `/dashboard?service=${service.id}`;
+                } else {
+                    const clickedIdx = Number(el.dataset.index);
+                    jumpToIndex(clickedIdx);
+                }
+            });
+            return el;
+        }
+
+        // render
+        services.forEach((s,i) => carousel.appendChild(createCard(s,i)));
+        const cards = Array.from(carousel.querySelectorAll('.card'));
+
+        function mod(n,m){ return ((n % m) + m) % m; }
+
+        function layout(){
+            // Reset all to out
+            cards.forEach(c=> c.className = 'card out');
+            // positions: -1, 0, 1 are visible
+            const positions = [-1, 0, 1];
+            positions.forEach(offset => {
+                const idx = mod(current + offset, total);
+                const card = cards[idx];
+                if(!card) return;
+                card.className = 'card';
+                if(offset === 0) card.classList.add('pos0');
+                else if(offset === -1) card.classList.add('pos--1');
+                else if(offset === 1) card.classList.add('pos1');
+                // store position multiplier for parallax
+                card.dataset.pos = offset;
+            });
+        }
+
+        function step(delta){
+            if(animating) return;
+            animating = true;
+            current = mod(current + delta, total);
+            layout();
+            setTimeout(()=> animating = false, 760);
+        }
+
+        function jumpToIndex(targetIdx){
+            const diff = mod(targetIdx - current, total);
+            if(diff === 0) return;
+            const leftSteps = diff <= total/2 ? diff : diff - total;
+            const steps = Math.abs(leftSteps);
+            const direction = leftSteps > 0 ? 1 : -1;
+            // chain small steps
+            let i=0;
+            const run = ()=>{
+                if(i>=steps) return;
+                step(direction);
+                i++;
+                setTimeout(run, 180);
+            };
+            run();
+        }
+
+        // controls
+        document.getElementById('prevBtn').addEventListener('click', ()=> step(-1));
+        document.getElementById('nextBtn').addEventListener('click', ()=> step(1));
+        window.addEventListener('keydown', e=>{ if(e.key==='ArrowLeft') step(-1); if(e.key==='ArrowRight') step(1); });
+
+        // smooth wheel with debounce + gentle animation
+        let wheelDebounce;
+        document.getElementById('viewport').addEventListener('wheel', (ev)=>{
+            ev.preventDefault();
+            const dir = ev.deltaY > 0 ? 1 : -1;
+            clearTimeout(wheelDebounce);
+            wheelDebounce = setTimeout(()=> step(dir), 60);
+        }, {passive:false});
+
+        // hover side-card behavior
+        let hoverTimer;
+        carousel.addEventListener('mouseover', (ev)=>{
+            const c = ev.target.closest('.card');
+            if(!c) return;
+            if(c.classList.contains('pos--1')) hoverTimer = setTimeout(()=> step(-1), 420);
+            else if(c.classList.contains('pos1')) hoverTimer = setTimeout(()=> step(1), 420);
+        });
+        carousel.addEventListener('mouseout', ()=> clearTimeout(hoverTimer));
+
+        // touch swipe
+        let touchStartX=null;
+        document.getElementById('viewport').addEventListener('touchstart', e=> { touchStartX = e.changedTouches[0].clientX; }, {passive:true});
+        document.getElementById('viewport').addEventListener('touchend', e=>{
+            if(touchStartX === null) return;
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            if(Math.abs(dx) > 40) step(dx > 0 ? -1 : 1);
+            touchStartX = null;
+        }, {passive:true});
+
+        // Parallax: move inner layers based on mouse within viewport
+        const viewport = document.getElementById('viewport');
+        viewport.addEventListener('mousemove', (e)=>{
+            const rect = viewport.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) / rect.width * 2 - 1; // -1 .. 1
+            const my = (e.clientY - rect.top) / rect.height * 2 - 1; // -1 .. 1
+            // apply small transforms per card depending on its position
+            cards.forEach(card => {
+                const pos = Number(card.dataset.pos) || 10; // -1,0,1 or big for out
+                const inner = card.querySelector('.card-inner');
+                if(!inner) return;
+                // center reacts more, side reacts less, out hardly reacts
+                const strength = pos === 0 ? 12 : (pos === -1 || pos === 1 ? 6 : 2);
+                inner.style.transform = `translate3d(${mx * strength}px, ${my * strength * 0.6}px, 0)`;
+                // small tilt effect
+                inner.style.rotate = `${-mx * strength * 0.08}deg`;
+                // parallax for icon/title layers
+                const icon = card.querySelector('.icon');
+                const title = card.querySelector('.title');
+                if(icon) icon.style.transform = `translate3d(${mx * strength * 0.7}px, ${-my * strength * 0.35}px, 0) scale(${pos===0?1.06:1})`;
+                if(title) title.style.transform = `translate3d(${mx * strength * 0.35}px, ${-my * strength * 0.2}px, 0)`;
+            });
+        });
+        // reset parallax when leaving
+        viewport.addEventListener('mouseleave', ()=>{
+            cards.forEach(card => {
+                const inner = card.querySelector('.card-inner');
+                if(inner) inner.style.transform = '';
+                const icon = card.querySelector('.icon'); if(icon) icon.style.transform = '';
+                const title = card.querySelector('.title'); if(title) title.style.transform = '';
+            });
+        });
+
+        // Initialize layout
+        layout();
+
+        // Optional: gentle auto-loop (disabled by default). Uncomment to enable.
+        // let autoLoop = setInterval(()=> step(1), 6000);
+        // viewport.addEventListener('mouseenter', ()=> clearInterval(autoLoop));
+    </script>
+</body>
+</html>

@@ -246,8 +246,8 @@
         }
         
         .form-wrapper {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: var(--spacing-md);
             margin-bottom: var(--spacing-md);
         }
@@ -258,6 +258,10 @@
             border-radius: 8px;
             border: 1px solid var(--border-primary);
             border-left: 3px solid var(--accent-primary);
+        }
+        
+        .form-section:first-child {
+            grid-column: 1 / -1;
         }
         
         .form-section h3 {
@@ -402,21 +406,21 @@
         .intent-item {
             display: flex;
             align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
             background: var(--bg-tertiary);
             border-radius: 6px;
             border: 1px solid var(--border-primary);
-            margin-bottom: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
         }
         
         .intent-item input,
         .intent-item select {
             flex: 1;
             margin: 0;
-            padding: 0 12px;
+            padding: 0 10px;
             font-size: 12px;
-            height: 32px;
+            height: 26px;
         }
         
         .remove-intent-btn {
@@ -435,6 +439,170 @@
         .remove-intent-btn:hover {
             background: rgba(255, 107, 107, 0.1);
             border-color: var(--terminal-error);
+        }
+        
+        /* SETUP GUIDE SECTION */
+        .setup-guide-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .setup-guide-heading {
+            color: var(--accent-light);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .setup-guide-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: var(--spacing-md);
+            align-items: flex-start;
+        }
+        
+        .setup-guide-column {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .setup-tab {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(79, 70, 229, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        
+        .setup-tab-header {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 8px 16px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            transition: var(--transition);
+        }
+        
+        .setup-tab-header:hover {
+            background: var(--bg-hover);
+        }
+        
+        .setup-tab-header-text {
+            color: var(--accent-light);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .setup-tab-toggle {
+            color: var(--text-tertiary);
+            font-size: 12px;
+            transition: var(--transition);
+        }
+        
+        .setup-tab.expanded .setup-tab-toggle {
+            transform: rotate(180deg);
+        }
+        
+        .setup-tab-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0 16px;
+        }
+        
+        .setup-tab.expanded .setup-tab-content {
+            max-height: 800px;
+            padding: 16px;
+        }
+        
+        .setup-or-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 40px;
+            padding-top: 30px;
+        }
+        
+        .setup-guide-column h3 {
+            color: var(--accent-light);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .setup-steps {
+            list-style: decimal;
+            margin-left: var(--spacing-lg);
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        
+        .setup-steps li {
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .setup-steps strong {
+            color: var(--accent-light);
+        }
+        
+        .cli-command {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .cmd-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .code-block {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: 6px;
+            padding: var(--spacing-sm);
+            font-size: 11px;
+            color: var(--terminal-success);
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 0;
+            line-height: 1.5;
+        }
+        
+        .setup-notice {
+            background: rgba(220, 220, 170, 0.1);
+            border-left: 3px solid var(--terminal-warning);
+            padding: var(--spacing-md);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: var(--spacing-md);
+        }
+        
+        .setup-notice strong {
+            color: var(--terminal-warning);
+        }
+        
+        .setup-divider {
+            border: none;
+            border-top: 1px solid var(--border-primary);
+            margin: var(--spacing-lg) 0;
         }
         
         /* RIGHT PANEL - TERMINAL */
@@ -705,6 +873,92 @@
                     <div class="content-wrapper">
                         <!-- S3 SCREEN -->
                         <div class="service-screen active" id="s3-screen">
+                            <!-- SETUP GUIDE SECTION -->
+                            <div class="setup-guide-wrapper">
+                                <div class="setup-guide-heading">🔐 Role Creation Steps</div>
+                                
+                                <div class="setup-guide-container">
+                                    <!-- GUI Steps Tab -->
+                                    <div class="setup-guide-column">
+                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                            <div class="setup-tab-header">
+                                                <span class="setup-tab-header-text">📋 GUI Steps</span>
+                                                <span class="setup-tab-toggle">▼</span>
+                                            </div>
+                                            <div class="setup-tab-content">
+                                                <ol class="setup-steps">
+                                                    <li>Open <strong>AWS Management Console</strong> and sign in</li>
+                                                    <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)</li>
+                                                    <li>Click <strong>"Create Role"</strong> button</li>
+                                                    <li>Select <strong>"AWS account"</strong> as the trusted entity type</li>
+                                                    <li>In the "Account ID" field, paste your <strong>12-digit AWS Account ID</strong></li>
+                                                    <li>Check <strong>"Require external ID"</strong> checkbox</li>
+                                                    <li>Enter a secure external ID (e.g., <code>CloudAstra-SecureID-2025</code>)</li>
+                                                    <li>Click <strong>"Next"</strong>, search for and select <strong>"AmazonS3FullAccess"</strong> policy</li>
+                                                    <li>Click <strong>"Next"</strong> and name the role <strong>"CloudAstraRole"</strong></li>
+                                                    <li>Review and click <strong>"Create Role"</strong></li>
+                                                    <li>Copy the <strong>Role ARN</strong> (format: <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraRole</code>)</li>
+                                                    <li>Paste both Role ARN and External ID in the form below</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- OR Divider -->
+                                    <div class="setup-or-divider">or</div>
+                                    
+                                    <!-- CLI Commands Tab -->
+                                    <div class="setup-guide-column">
+                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                            <div class="setup-tab-header">
+                                                <span class="setup-tab-header-text">⚙️ CLI Commands</span>
+                                                <span class="setup-tab-toggle">▼</span>
+                                            </div>
+                                            <div class="setup-tab-content">
+                                                <div class="cli-command">
+                                                    <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):</p>
+                                                    <pre class="code-block">{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::YOUR-ACCOUNT-ID:root"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "sts:ExternalId": "your-secure-external-id"
+        }
+      }
+    }
+  ]
+}</pre>
+                                                </div>
+                                                
+                                                <div class="cli-command">
+                                                    <p class="cmd-label">2. Create Role (S3 example - S3FullAccess):</p>
+                                                    <pre class="code-block">aws iam create-role --role-name CloudAstraRole \
+  --assume-role-policy-document file://trust-policy.json</pre>
+                                                </div>
+                                                
+                                                <div class="cli-command">
+                                                    <p class="cmd-label">3. Attach Policy (S3):</p>
+                                                    <pre class="code-block">aws iam attach-role-policy --role-name CloudAstraRole \
+  --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess</pre>
+                                                </div>
+                                                
+                                                <div class="setup-notice">
+                                                    <strong>⚠️ Security Note:</strong> For simplicity, we use full service access policies (e.g., AmazonS3FullAccess). For your security/privacy, you can configure <strong>least privilege policies</strong> with only required permissions.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="setup-divider">
+                            
                             <form id="scanForm" onsubmit="submitScan(event)">
                                 <div class="form-wrapper">
                                     <div class="form-section">
@@ -780,6 +1034,80 @@
                         
                         <!-- EC2 SCREEN -->
                         <div class="service-screen" id="ec2-screen">
+                            <!-- SETUP GUIDE SECTION -->
+                            <div class="setup-guide-wrapper">
+                                <div class="setup-guide-heading">🔐 Role Creation Steps</div>
+                                
+                                <div class="setup-guide-container">
+                                    <!-- GUI Steps Tab -->
+                                    <div class="setup-guide-column">
+                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                            <div class="setup-tab-header">
+                                                <span class="setup-tab-header-text">📋 GUI Steps</span>
+                                                <span class="setup-tab-toggle">▼</span>
+                                            </div>
+                                            <div class="setup-tab-content">
+                                                <ol class="setup-steps">
+                                                    <li>Open <strong>AWS Management Console</strong> and sign in</li>
+                                                    <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)</li>
+                                                    <li>Click <strong>"Create Role"</strong> button</li>
+                                                    <li>Select <strong>"AWS account"</strong> as the trusted entity type</li>
+                                                    <li>In the "Account ID" field, paste your <strong>12-digit AWS Account ID</strong></li>
+                                                    <li>Check <strong>"Require external ID"</strong> checkbox</li>
+                                                    <li>Enter a secure external ID (e.g., <code>CloudAstra-EC2-SecureID-2025</code>)</li>
+                                                    <li>Click <strong>"Next"</strong>, search for and select <strong>"AmazonEC2FullAccess"</strong> policy</li>
+                                                    <li>Click <strong>"Next"</strong> and name the role <strong>"CloudAstraEC2Role"</strong></li>
+                                                    <li>Review and click <strong>"Create Role"</strong></li>
+                                                    <li>Copy the <strong>Role ARN</strong> (format: <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraEC2Role</code>)</li>
+                                                    <li>Paste both Role ARN and External ID in the form below</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- OR Divider -->
+                                    <div class="setup-or-divider">or</div>
+                                    
+                                    <!-- CLI Commands Tab -->
+                                    <div class="setup-guide-column">
+                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                            <div class="setup-tab-header">
+                                                <span class="setup-tab-header-text">⚙️ CLI Commands</span>
+                                                <span class="setup-tab-toggle">▼</span>
+                                            </div>
+                                            <div class="setup-tab-content">
+                                                <div class="cli-command">
+                                                    <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):</p>
+                                                    <pre class="code-block">{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"AWS": "arn:aws:iam::YOUR-ACCOUNT-ID:root"},
+    "Action": "sts:AssumeRole",
+    "Condition": {"StringEquals": {"sts:ExternalId": "your-secure-external-id"}}
+  }]
+}</pre>
+                                                </div>
+                                                
+                                                <div class="cli-command">
+                                                    <p class="cmd-label">2. Create Role & Attach EC2FullAccess:</p>
+                                                    <pre class="code-block">aws iam create-role --role-name CloudAstraEC2Role \
+  --assume-role-policy-document file://trust-policy.json
+
+aws iam attach-role-policy --role-name CloudAstraEC2Role \
+  --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess</pre>
+                                                </div>
+                                                
+                                                <div class="setup-notice">
+                                                    <strong>⚠️ Security Note:</strong> For production, use least privilege with specific EC2 permissions (e.g., ec2:DescribeInstances, ec2:DescribeSecurityGroups) instead of full access.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="setup-divider">
+                            
                             <form id="ec2ScanForm" onsubmit="submitScan(event)">
                                 <div class="form-wrapper">
                                     <div class="form-section">
@@ -858,6 +1186,80 @@
                         
                         <!-- IAM SCREEN -->
                         <div class="service-screen" id="iam-screen">
+                            <!-- SETUP GUIDE SECTION -->
+                            <div class="setup-guide-wrapper">
+                                <div class="setup-guide-heading">🔐 Role Creation Steps</div>
+                                
+                                <div class="setup-guide-container">
+                                    <!-- GUI Steps Tab -->
+                                    <div class="setup-guide-column">
+                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                            <div class="setup-tab-header">
+                                                <span class="setup-tab-header-text">📋 GUI Steps</span>
+                                                <span class="setup-tab-toggle">▼</span>
+                                            </div>
+                                            <div class="setup-tab-content">
+                                                <ol class="setup-steps">
+                                                    <li>Open <strong>AWS Management Console</strong> and sign in</li>
+                                                    <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)</li>
+                                                    <li>Click <strong>"Create Role"</strong> button</li>
+                                                    <li>Select <strong>"AWS account"</strong> as the trusted entity type</li>
+                                                    <li>In the "Account ID" field, paste your <strong>12-digit AWS Account ID</strong></li>
+                                                    <li>Check <strong>"Require external ID"</strong> checkbox</li>
+                                                    <li>Enter a secure external ID (e.g., <code>CloudAstra-IAM-SecureID-2025</code>)</li>
+                                                    <li>Click <strong>"Next"</strong>, search for and select <strong>"IAMFullAccess"</strong> policy</li>
+                                                    <li>Click <strong>"Next"</strong> and name the role <strong>"CloudAstraIAMRole"</strong></li>
+                                                    <li>Review and click <strong>"Create Role"</strong></li>
+                                                    <li>Copy the <strong>Role ARN</strong> (format: <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraIAMRole</code>)</li>
+                                                    <li>Paste both Role ARN and External ID in the form below</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- OR Divider -->
+                                    <div class="setup-or-divider">or</div>
+                                    
+                                    <!-- CLI Commands Tab -->
+                                    <div class="setup-guide-column">
+                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                            <div class="setup-tab-header">
+                                                <span class="setup-tab-header-text">⚙️ CLI Commands</span>
+                                                <span class="setup-tab-toggle">▼</span>
+                                            </div>
+                                            <div class="setup-tab-content">
+                                                <div class="cli-command">
+                                                    <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):</p>
+                                                    <pre class="code-block">{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"AWS": "arn:aws:iam::YOUR-ACCOUNT-ID:root"},
+    "Action": "sts:AssumeRole",
+    "Condition": {"StringEquals": {"sts:ExternalId": "your-secure-external-id"}}
+  }]
+}</pre>
+                                                </div>
+                                                
+                                                <div class="cli-command">
+                                                    <p class="cmd-label">2. Create Role & Attach IAMFullAccess:</p>
+                                                    <pre class="code-block">aws iam create-role --role-name CloudAstraIAMRole \
+  --assume-role-policy-document file://trust-policy.json
+
+aws iam attach-role-policy --role-name CloudAstraIAMRole \
+  --policy-arn arn:aws:iam::aws:policy/IAMFullAccess</pre>
+                                                </div>
+                                                
+                                                <div class="setup-notice">
+                                                    <strong>⚠️ Security Note:</strong> For production, use least privilege with specific IAM permissions (e.g., iam:GetUser, iam:ListAccessKeys, iam:ListMFADevices) instead of full access.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="setup-divider">
+                            
                             <form id="iamScanForm" onsubmit="submitScan(event)">
                                 <div class="form-wrapper">
                                     <div class="form-section">
@@ -941,6 +1343,80 @@
                         
                         <!-- LAMBDA SCREEN -->
                         <div class="service-screen" id="lambda-screen">
+                            <!-- SETUP GUIDE SECTION -->
+                            <div class="setup-guide-wrapper">
+                                <div class="setup-guide-heading">🔐 Role Creation Steps</div>
+                                
+                                <div class="setup-guide-container">
+                                    <!-- GUI Steps Tab -->
+                                    <div class="setup-guide-column">
+                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                            <div class="setup-tab-header">
+                                                <span class="setup-tab-header-text">📋 GUI Steps</span>
+                                                <span class="setup-tab-toggle">▼</span>
+                                            </div>
+                                            <div class="setup-tab-content">
+                                                <ol class="setup-steps">
+                                                    <li>Open <strong>AWS Management Console</strong> and sign in</li>
+                                                    <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)</li>
+                                                    <li>Click <strong>"Create Role"</strong> button</li>
+                                                    <li>Select <strong>"AWS account"</strong> as the trusted entity type</li>
+                                                    <li>In the "Account ID" field, paste your <strong>12-digit AWS Account ID</strong></li>
+                                                    <li>Check <strong>"Require external ID"</strong> checkbox</li>
+                                                    <li>Enter a secure external ID (e.g., <code>CloudAstra-Lambda-SecureID-2025</code>)</li>
+                                                    <li>Click <strong>"Next"</strong>, search for and select <strong>"AWSLambda_FullAccess"</strong> policy</li>
+                                                    <li>Click <strong>"Next"</strong> and name the role <strong>"CloudAstraLambdaRole"</strong></li>
+                                                    <li>Review and click <strong>"Create Role"</strong></li>
+                                                    <li>Copy the <strong>Role ARN</strong> (format: <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraLambdaRole</code>)</li>
+                                                    <li>Paste both Role ARN and External ID in the form below</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- OR Divider -->
+                                    <div class="setup-or-divider">or</div>
+                                    
+                                    <!-- CLI Commands Tab -->
+                                    <div class="setup-guide-column">
+                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                            <div class="setup-tab-header">
+                                                <span class="setup-tab-header-text">⚙️ CLI Commands</span>
+                                                <span class="setup-tab-toggle">▼</span>
+                                            </div>
+                                            <div class="setup-tab-content">
+                                                <div class="cli-command">
+                                                    <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):</p>
+                                                    <pre class="code-block">{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"AWS": "arn:aws:iam::YOUR-ACCOUNT-ID:root"},
+    "Action": "sts:AssumeRole",
+    "Condition": {"StringEquals": {"sts:ExternalId": "your-secure-external-id"}}
+  }]
+}</pre>
+                                                </div>
+                                                
+                                                <div class="cli-command">
+                                                    <p class="cmd-label">2. Create Role & Attach Lambda Policy:</p>
+                                                    <pre class="code-block">aws iam create-role --role-name CloudAstraLambdaRole \
+  --assume-role-policy-document file://trust-policy.json
+
+aws iam attach-role-policy --role-name CloudAstraLambdaRole \
+  --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess</pre>
+                                                </div>
+                                                
+                                                <div class="setup-notice">
+                                                    <strong>⚠️ Security Note:</strong> For production, use least privilege with specific Lambda permissions (e.g., lambda:GetFunction, lambda:ListFunctions, logs:DescribeLogGroups) instead of full access.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="setup-divider">
+                            
                             <form id="lambdaScanForm" onsubmit="submitScan(event)">
                                 <div class="form-wrapper">
                                     <div class="form-section">
@@ -1491,6 +1967,13 @@
                 input.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') executeCommand();
                 });
+            }
+            
+            // Check if landing page passed a service parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const serviceParam = urlParams.get('service');
+            if (serviceParam && ['s3', 'ec2', 'iam', 'lambda'].includes(serviceParam)) {
+                switchService(serviceParam, null);
             }
         });
     </script>
