@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Astra - AWS Security Management</title>
+    <link rel="icon" type="image/jpeg" href="/static/logos/astra-icon-clean.jpg">
     <title>Cloud Astra</title>
     <style>
         :root {
@@ -120,6 +122,16 @@
         .sidebar-branding-icon {
             font-size: 20px;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sidebar-branding-icon img {
+            display: block;
+            border-radius: 50%;
+            overflow: hidden;
+            mix-blend-mode: screen;
         }
         
         .sidebar-branding-text {
@@ -1295,7 +1307,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-branding">
-                    <span class="sidebar-branding-icon">🛡️</span>
+                    <span class="sidebar-branding-icon"><img src="/static/logos/astra-icon.png" style="width:28px;height:28px;object-fit:contain;"></span>
                     <span class="sidebar-branding-text">CloudASTRA</span>
                 </div>
                 <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
