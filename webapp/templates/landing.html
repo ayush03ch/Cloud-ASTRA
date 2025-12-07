@@ -144,6 +144,7 @@
     <script>
         // Data
         const services = [
+            { id: 'about', icon: '<span style="font-size:60px;">ℹ️</span>', title: 'About CloudAstra', description: 'Learn about our mission, team, and platform.', link: '/about' },
             { id: 's3', icon: '<img src="/static/logos/s3bucket.webp" style="width:66px;height:66px;object-fit:contain">', title: 'S3 Security', description: 'Encryption, versioning, public access, and website hosting management' },
             { id: 'ec2', icon: '<img src="/static/logos/ec2.svg" style="width:66px;height:66px;object-fit:contain">', title: 'EC2 Security', description: 'Security groups, EBS encryption, backups, and IMDSv2 validation' },
             { id: 'iam', icon: '<img src="/static/logos/IAM.jpeg" style="width:66px;height:66px;object-fit:contain">', title: 'IAM Management', description: 'Access keys, MFA enforcement, inactive users, and privilege analysis' },
@@ -167,8 +168,12 @@
                 </div>
             `;
             el.addEventListener('click', () => {
-                // Navigate directly to the service dashboard
-                window.location.href = `/dashboard?service=${service.id}`;
+                // If About card, go to About page
+                if (service.id === 'about' && service.link) {
+                    window.location.href = service.link;
+                } else {
+                    window.location.href = `/dashboard?service=${service.id}`;
+                }
             });
             return el;
         }
