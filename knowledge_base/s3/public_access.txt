@@ -1,0 +1,74 @@
+# S3 Public Access Control
+
+Keywords: public-access, s3, security, permissions, acl
+
+## Overview
+
+S3 buckets and objects can be accidentally exposed to the public internet, leading to data breaches. AWS provides Block Public Access settings to prevent this.
+
+## Common Issues
+
+### Public ACL Enabled
+Buckets with public read or write ACLs expose data to anyone on the internet.
+
+**Severity**: CRITICAL
+
+**Detection**: Bucket ACL contains grants to "AllUsers" or "AuthenticatedUsers"
+
+### Public Bucket Policy
+Bucket policies with Principal: "*" and no conditions allow unrestricted access.
+
+**Severity**: CRITICAL
+
+**Detection**: Bucket policy allows Action on Principal "*" without IpAddress or VPC conditions
+
+### Block Public Access Disabled
+When Block Public Access is disabled, accidental exposure is possible.
+
+**Severity**: HIGH
+
+**Detection**: BlockPublicAcls, IgnorePublicAcls, BlockPublicPolicy, or RestrictPublicBuckets is False
+
+## Best Practices
+
+1. **Enable Block Public Access**: Turn on all four Block Public Access settings at account and bucket level
+2. **Use Bucket Policies**: Prefer bucket policies over ACLs for access control
+3. **Least Privilege**: Only grant necessary permissions
+4. **Regular Audits**: Use AWS Access Analyzer to detect public access
+5. **CloudFront for Public Content**: Use CloudFront with OAI instead of public S3 access
+
+## Remediation Steps
+
+### Enable Block Public Access
+```
+aws s3api put-public-access-block \
+    --bucket BUCKET_NAME \
+    --public-access-block-configuration \
+        BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+```
+
+### Remove Public ACL
+```
+aws s3api put-bucket-acl \
+    --bucket BUCKET_NAME \
+    --acl private
+```
+
+## Intent-Specific Recommendations
+
+### website_hosting Intent
+- Public access is REQUIRED for static website hosting
+- Use bucket policy with specific permissions
+- Consider CloudFront + OAI for better security
+
+### data_storage Intent
+- Block ALL public access
+- Use IAM roles or pre-signed URLs for access
+
+### data_archival Intent
+- Block ALL public access
+- No exceptions - archived data should never be public
+
+## References
+
+- Blocking Public Access to S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html

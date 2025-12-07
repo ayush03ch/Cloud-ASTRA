@@ -1,0 +1,82 @@
+# Lambda Function Memory Allocation Best Practices
+
+Keywords: memory, lambda, performance, optimization, cost
+
+## Overview
+
+Lambda function memory allocation affects both performance and cost. Memory allocation also proportionally scales CPU and network resources.
+
+## Common Issues
+
+### Insufficient Memory
+Functions configured with too little memory may fail or run slowly.
+
+**Severity**: MEDIUM
+
+**Detection**: Function Memory < 512 MB and CloudWatch Logs show "Runtime exited with error" or high duration
+
+### Excessive Memory
+Functions with more memory than needed waste money.
+
+**Severity**: LOW
+
+**Detection**: Function Memory > 1024 MB but max memory used < 50% of allocated
+
+### Default Memory
+Functions using default 128 MB often underperform.
+
+**Severity**: MEDIUM
+
+**Detection**: Function Memory = 128 MB
+
+## Best Practices
+
+1. **Right-Size Memory**: Use AWS Lambda Power Tuning to find optimal memory
+2. **Monitor Usage**: Track actual memory usage in CloudWatch Logs
+3. **Start with 512 MB**: Good default for most functions
+4. **Test Performance**: Higher memory = more CPU = faster execution
+5. **Balance Cost vs Speed**: Sometimes higher memory reduces total cost
+
+## Remediation Steps
+
+### Update Function Memory
+```
+aws lambda update-function-configuration \
+    --function-name FUNCTION_NAME \
+    --memory-size 512
+```
+
+### Use Lambda Power Tuning
+```
+# Deploy Power Tuning tool
+sam deploy --guided \
+    --template https://github.com/alexcasalboni/aws-lambda-power-tuning
+
+# Run optimization
+aws stepfunctions start-execution \
+    --state-machine-arn STATE_MACHINE_ARN \
+    --input '{"lambdaARN": "FUNCTION_ARN"}'
+```
+
+## Intent-Specific Recommendations
+
+### api_endpoint Intent
+- Balance latency vs cost
+- Typical: 512-1024 MB
+- Use Power Tuning for optimization
+
+### scheduled_task Intent
+- Cost optimization more important than latency
+- Typical: 256-512 MB
+- Can use lower memory if execution time allows
+
+### data_processing Intent
+- Higher memory for faster processing
+- Typical: 1024-3008 MB
+- More memory = more CPU = faster data processing
+- Total cost may decrease with higher memory
+
+## References
+
+- Lambda Memory Configuration: https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html
+- Lambda Power Tuning: https://github.com/alexcasalboni/aws-lambda-power-tuning

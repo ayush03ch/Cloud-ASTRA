@@ -1,0 +1,69 @@
+# S3 Versioning Best Practices
+
+Keywords: versioning, s3, data-protection, backup, recovery
+
+## Overview
+
+S3 Versioning enables you to keep multiple variants of an object in the same bucket. This protects against accidental deletions and overwrites.
+
+## Common Issues
+
+### Versioning Disabled
+Buckets without versioning are vulnerable to accidental data loss.
+
+**Severity**: MEDIUM to HIGH
+
+**Detection**: VersioningConfiguration Status is not "Enabled"
+
+### MFA Delete Not Configured
+Without MFA delete, versioned objects can still be permanently deleted without additional authentication.
+
+**Severity**: MEDIUM
+
+**Detection**: VersioningConfiguration MFADelete is not "Enabled"
+
+## Best Practices
+
+1. **Enable Versioning**: Enable versioning on all critical data buckets
+2. **Configure MFA Delete**: Require MFA for permanent deletions of object versions
+3. **Lifecycle Policies**: Use lifecycle rules to manage old versions
+4. **Monitor Costs**: Versioning increases storage costs - monitor and optimize
+5. **Cross-Region Replication**: Combine versioning with CRR for disaster recovery
+
+## Remediation Steps
+
+### Enable Versioning
+```
+aws s3api put-bucket-versioning \
+    --bucket BUCKET_NAME \
+    --versioning-configuration Status=Enabled
+```
+
+### Enable MFA Delete
+```
+aws s3api put-bucket-versioning \
+    --bucket BUCKET_NAME \
+    --versioning-configuration Status=Enabled,MFADelete=Enabled \
+    --mfa "SERIAL_NUMBER MFA_CODE"
+```
+
+## Intent-Specific Recommendations
+
+### data_storage Intent
+- Enable versioning for all production data
+- Configure lifecycle policies to transition old versions to Glacier
+- Enable MFA delete for critical data
+
+### website_hosting Intent
+- Versioning is optional but recommended
+- Helps rollback bad deployments
+- Consider S3 website hosting limitations
+
+### data_archival Intent
+- Versioning may not be necessary for write-once data
+- Focus on lifecycle policies instead
+- Enable if archive updates are expected
+
+## References
+
+- S3 Versioning Documentation: https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html

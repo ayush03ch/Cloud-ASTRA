@@ -1,0 +1,80 @@
+# S3 Bucket Encryption Best Practices
+
+Keywords: encryption, s3, security, data-protection, kms
+
+## Overview
+
+Amazon S3 default encryption provides a way to set the default encryption behavior for an S3 bucket. When you upload an object to a bucket with default encryption enabled, Amazon S3 encrypts the object before saving it.
+
+## Common Issues
+
+### Missing Encryption at Rest
+Many S3 buckets are created without default encryption enabled, leaving data vulnerable. This is especially critical for buckets storing sensitive information like PII, financial data, or healthcare records.
+
+**Severity**: HIGH
+
+**Detection**: Check if ServerSideEncryptionConfiguration is missing from bucket configuration
+
+### Weak Encryption Algorithm
+Some buckets use AES256 (SSE-S3) when they should use AWS KMS (SSE-KMS) for better key management and audit trails.
+
+**Severity**: MEDIUM
+
+**Detection**: ServerSideEncryptionConfiguration uses 'AES256' instead of 'aws:kms'
+
+## Best Practices
+
+1. **Enable Default Encryption**: Always enable default encryption on all S3 buckets
+2. **Use KMS for Sensitive Data**: Use AWS KMS encryption for buckets with sensitive data
+3. **Rotate Keys**: If using KMS, enable automatic key rotation
+4. **Enforce Encryption**: Use bucket policies to deny uploads without encryption headers
+5. **Audit Access**: Enable CloudTrail logging for KMS key usage
+
+## Remediation Steps
+
+### Enable SSE-S3 Encryption
+```
+aws s3api put-bucket-encryption \
+    --bucket BUCKET_NAME \
+    --server-side-encryption-configuration '{
+        "Rules": [{
+            "ApplyServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+            }
+        }]
+    }'
+```
+
+### Enable SSE-KMS Encryption
+```
+aws s3api put-bucket-encryption \
+    --bucket BUCKET_NAME \
+    --server-side-encryption-configuration '{
+        "Rules": [{
+            "ApplyServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "aws:kms",
+                "KMSMasterKeyID": "aws/s3"
+            }
+        }]
+    }'
+```
+
+## Intent-Specific Recommendations
+
+### data_storage Intent
+- Use SSE-KMS with customer-managed keys
+- Enable key rotation
+- Implement least-privilege KMS key policies
+
+### website_hosting Intent
+- SSE-S3 is usually sufficient
+- Consider CloudFront for additional encryption in transit
+
+### data_archival Intent
+- SSE-S3 is acceptable for archived data
+- Focus on lifecycle policies and Glacier encryption
+
+## References
+
+- AWS S3 Encryption Documentation: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucket-encryption.html
+- S3 Security Best Practices: https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html

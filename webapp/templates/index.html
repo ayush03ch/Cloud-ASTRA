@@ -935,7 +935,7 @@
             <!-- LEFT PANEL -->
             <div class="left-panel">
                 <div class="panel-header">
-                    <h2 id="panelTitle">🪣 S3 Security Scanner</h2>
+                    <h2 id="panelTitle">🪣 S3 Scanner</h2>
                 </div>
                 
                 <div class="panel-content">
@@ -1578,12 +1578,13 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             <!-- RIGHT PANEL - TERMINAL -->
             <div class="right-panel" id="rightPanel">
                 <div class="terminal-header">
-                    <h3>🖥️ Terminal</h3>
+                    <h3>🖥️ Astra</h3>
                 </div>
                 
                 <div class="terminal-container">
                     <div class="terminal-output" id="terminalOutput">
-                        <div class="terminal-output-line success">Welcome to Astra, your CloudASTRA CLI</div>
+                        <div class="terminal-output-line success">>>> Astra Terminal Activated </div>
+                        <div class="terminal-output-line info">Scanning, detecting, and resolving AWS misconfigurations begins now.</div>
                         <div class="terminal-output-line info">Type 'help' for Cloud ASTRA & AWS CLI commands</div>
                     </div>
                     
@@ -1615,10 +1616,10 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             document.getElementById(service + '-screen').classList.add('active');
             
             const titles = {
-                's3': '🪣 S3 Security Scanner',
-                'ec2': '💻 EC2 Security Scanner',
-                'iam': '🔐 IAM Management',
-                'lambda': '⚡ Lambda Security Scanner',
+                's3': '🪣 S3  Scanner',
+                'ec2': '💻 EC2  Scanner',
+                'iam': '🔐 IAM Scanner',
+                'lambda': '⚡ Lambda  Scanner',
                 'dashboard': '📊 Dashboard'
             };
             const title = titles[service];
@@ -1664,6 +1665,50 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             `;
             container.appendChild(item);
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         
         function removeIntent(btn) {
             if (document.querySelectorAll('.intent-item').length > 1) {

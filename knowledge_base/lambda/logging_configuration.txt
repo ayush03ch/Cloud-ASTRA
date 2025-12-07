@@ -1,0 +1,86 @@
+# Lambda Function Logging Best Practices
+
+Keywords: logging, lambda, cloudwatch, monitoring, debugging
+
+## Overview
+
+Proper logging is essential for debugging, monitoring, and security auditing of Lambda functions.
+
+## Common Issues
+
+### Logging Disabled
+Lambda functions without CloudWatch Logs permissions cannot write logs.
+
+**Severity**: HIGH
+
+**Detection**: Function execution role lacks "logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"
+
+### Insufficient Log Retention
+Default 30-day retention may not meet compliance requirements.
+
+**Severity**: MEDIUM
+
+**Detection**: Log group retention is set to default or less than required
+
+### Sensitive Data in Logs
+Functions logging sensitive data like credentials or PII.
+
+**Severity**: HIGH
+
+**Detection**: Manual review of function code and log patterns
+
+## Best Practices
+
+1. **Always Enable Logging**: Ensure execution role has CloudWatch Logs permissions
+2. **Set Appropriate Retention**: Configure log retention based on compliance needs
+3. **Structured Logging**: Use JSON format for better searchability
+4. **Never Log Secrets**: Sanitize sensitive data before logging
+5. **Use Log Insights**: Set up CloudWatch Insights queries for monitoring
+
+## Remediation Steps
+
+### Add Logging Permissions to Role
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "arn:aws:logs:*:*:*"
+        }
+    ]
+}
+```
+
+### Set Log Retention
+```
+aws logs put-retention-policy \
+    --log-group-name /aws/lambda/FUNCTION_NAME \
+    --retention-in-days 90
+```
+
+## Intent-Specific Recommendations
+
+### api_endpoint Intent
+- Enable detailed request/response logging
+- Log response times for performance monitoring
+- Set 90-day retention minimum
+
+### scheduled_task Intent
+- Log execution status clearly
+- Include error details for failed runs
+- Set retention based on audit requirements
+
+### data_processing Intent
+- Log transformation steps
+- Include data volume metrics
+- Longer retention for audit trails
+
+## References
+
+- Lambda Logging Documentation: https://docs.aws.amazon.com/lambda/latest/dg/monitoring-cloudwatchlogs.html

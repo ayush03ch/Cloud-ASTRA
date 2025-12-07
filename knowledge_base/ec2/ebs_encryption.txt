@@ -1,0 +1,86 @@
+# EC2 EBS Encryption Best Practices
+
+Keywords: ebs, encryption, ec2, storage, data-protection
+
+## Overview
+
+Amazon EBS encryption provides encryption at rest for EBS volumes and snapshots using AWS KMS keys.
+
+## Common Issues
+
+### Unencrypted EBS Volumes
+EBS volumes without encryption expose data if physical storage is compromised.
+
+**Severity**: HIGH
+
+**Detection**: EBS volume Encrypted property is False
+
+### Unencrypted Root Volumes
+Boot volumes without encryption are particularly risky as they contain OS and application data.
+
+**Severity**: HIGH
+
+**Detection**: Root device volume (DeviceName: /dev/sda1 or /dev/xvda) is not encrypted
+
+### Default Encryption Disabled
+Without default encryption, new volumes may be created unencrypted by mistake.
+
+**Severity**: MEDIUM
+
+**Detection**: EC2 account-level default encryption is not enabled
+
+## Best Practices
+
+1. **Enable Default Encryption**: Enable EBS encryption by default in each region
+2. **Encrypt All Volumes**: Encrypt both root and data volumes
+3. **Use Customer-Managed Keys**: Use customer-managed KMS keys for sensitive workloads
+4. **Encrypt Snapshots**: Always encrypt snapshots of sensitive data
+5. **Rotate Keys**: Enable automatic KMS key rotation
+
+## Remediation Steps
+
+### Enable Default EBS Encryption
+```
+aws ec2 enable-ebs-encryption-by-default \
+    --region us-east-1
+```
+
+### Encrypt Existing Volume (requires recreation)
+```
+# Create snapshot
+aws ec2 create-snapshot \
+    --volume-id vol-xxxxx \
+    --description "Backup before encryption"
+
+# Copy snapshot with encryption
+aws ec2 copy-snapshot \
+    --source-snapshot-id snap-xxxxx \
+    --encrypted \
+    --kms-key-id alias/aws/ebs
+
+# Create new encrypted volume
+aws ec2 create-volume \
+    --snapshot-id snap-yyyyy \
+    --encrypted
+```
+
+## Intent-Specific Recommendations
+
+### database_server Intent
+- ALWAYS encrypt database volumes
+- Use customer-managed KMS keys
+- Enable automated snapshots with encryption
+
+### application_server Intent
+- Encrypt root and data volumes
+- Default EBS encryption is sufficient
+- Monitor KMS costs for high-throughput workloads
+
+### web_server Intent
+- Encrypt volumes containing logs or session data
+- Standard encryption is usually sufficient
+- Consider CloudWatch Logs for log data instead
+
+## References
+
+- EBS Encryption Documentation: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html

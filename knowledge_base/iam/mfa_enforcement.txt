@@ -1,0 +1,88 @@
+# IAM MFA Enforcement Best Practices
+
+Keywords: mfa, iam, authentication, security, multi-factor
+
+## Overview
+
+Multi-Factor Authentication (MFA) adds an extra layer of security by requiring users to provide two or more verification factors.
+
+## Common Issues
+
+### Missing MFA on Root Account
+The AWS root account without MFA is a critical security risk.
+
+**Severity**: CRITICAL
+
+**Detection**: Root account credentials used without MFA enabled
+
+### Users Without MFA
+IAM users with console access but no MFA are vulnerable to credential compromise.
+
+**Severity**: HIGH
+
+**Detection**: User has LoginProfile but MFADevices list is empty
+
+### No MFA Policy Enforcement
+Policies don't require MFA for sensitive actions.
+
+**Severity**: MEDIUM
+
+**Detection**: IAM policies lack "aws:MultiFactorAuthPresent" conditions
+
+## Best Practices
+
+1. **Enable MFA on Root**: Always enable MFA on the root account
+2. **Require MFA for Console Users**: All users with console access must have MFA
+3. **Enforce MFA in Policies**: Use IAM policy conditions to require MFA for sensitive actions
+4. **Use Hardware MFA for High-Privilege**: Use hardware MFA devices for admin accounts
+5. **Regular MFA Audits**: Check compliance monthly
+
+## Remediation Steps
+
+### Create Policy Requiring MFA
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Deny",
+            "Action": "*",
+            "Resource": "*",
+            "Condition": {
+                "BoolIfExists": {
+                    "aws:MultiFactorAuthPresent": "false"
+                }
+            }
+        }
+    ]
+}
+```
+
+### Enable Virtual MFA Device
+```
+aws iam enable-mfa-device \
+    --user-name USERNAME \
+    --serial-number arn:aws:iam::ACCOUNT:mfa/USERNAME \
+    --authentication-code1 CODE1 \
+    --authentication-code2 CODE2
+```
+
+## Intent-Specific Recommendations
+
+### least_privilege Intent
+- MFA required for all privilege escalation
+- Condition policies to enforce MFA
+
+### strong_security Intent
+- Hardware MFA for administrators
+- Virtual MFA minimum for all users
+- MFA required for console and API access
+
+### compliance Intent
+- Document MFA procedures
+- Automated compliance checks
+- Quarterly MFA device audits
+
+## References
+
+- AWS IAM MFA Documentation: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.html

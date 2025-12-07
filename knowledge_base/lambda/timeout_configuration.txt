@@ -1,0 +1,78 @@
+# Lambda Function Timeout Configuration Best Practices
+
+Keywords: timeout, lambda, performance, configuration, optimization
+
+## Overview
+
+Lambda function timeout settings determine how long a function can run before being terminated. Proper configuration prevents runaway executions and unnecessary costs.
+
+## Common Issues
+
+### Timeout Too Low
+Functions timing out before completing legitimate work.
+
+**Severity**: MEDIUM
+
+**Detection**: Function Timeout < 30 seconds and CloudWatch Logs show timeout errors
+
+### Timeout Too High
+Functions with unnecessarily high timeouts increase costs and delay error detection.
+
+**Severity**: LOW to MEDIUM
+
+**Detection**: Function Timeout > 300 seconds but average execution time < 60 seconds
+
+### Default Timeout
+Functions using the default 3-second timeout often fail unexpectedly.
+
+**Severity**: MEDIUM
+
+**Detection**: Function Timeout = 3 seconds
+
+## Best Practices
+
+1. **Set Based on Requirements**: Configure timeout based on actual execution time + buffer
+2. **Monitor Execution Time**: Use CloudWatch metrics to track duration
+3. **Add 20% Buffer**: Set timeout to 120% of average execution time
+4. **Maximum 15 Minutes**: Lambda functions can run up to 15 minutes (900 seconds)
+5. **Use Step Functions for Long Tasks**: For workflows longer than 15 minutes
+
+## Remediation Steps
+
+### Update Function Timeout
+```
+aws lambda update-function-configuration \
+    --function-name FUNCTION_NAME \
+    --timeout 60
+```
+
+### Set Timeout with CloudFormation
+```yaml
+Resources:
+  MyFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Timeout: 60
+      # ... other properties
+```
+
+## Intent-Specific Recommendations
+
+### api_endpoint Intent
+- Keep timeout low (5-30 seconds)
+- API Gateway has 29-second timeout limit
+- Consider async processing for longer tasks
+
+### scheduled_task Intent
+- Set timeout based on task complexity
+- Allow sufficient time for retries
+- Monitor for timeout errors
+
+### data_processing Intent
+- Higher timeouts acceptable (up to 900 seconds)
+- Batch processing may need maximum timeout
+- Consider Lambda Step Functions for long workflows
+
+## References
+
+- Lambda Configuration Documentation: https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html

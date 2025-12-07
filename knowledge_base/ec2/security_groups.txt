@@ -1,0 +1,80 @@
+# EC2 Security Group Best Practices
+
+Keywords: security-groups, ec2, firewall, network-security, ingress
+
+## Overview
+
+Security groups act as virtual firewalls for EC2 instances. Misconfigured security groups are one of the most common cloud security issues.
+
+## Common Issues
+
+### Unrestricted Ingress (0.0.0.0/0)
+Security groups allowing access from anywhere (0.0.0.0/0) on sensitive ports.
+
+**Severity**: HIGH to CRITICAL
+
+**Detection**: Ingress rule with CidrIp: "0.0.0.0/0" on ports other than 80/443
+
+**Common Vulnerable Ports**:
+- Port 22 (SSH)
+- Port 3389 (RDP)
+- Port 3306 (MySQL)
+- Port 5432 (PostgreSQL)
+- Port 1433 (MSSQL)
+- Port 27017 (MongoDB)
+
+### Overly Permissive Port Ranges
+Rules allowing large port ranges (e.g., 0-65535) increase attack surface.
+
+**Severity**: HIGH
+
+**Detection**: FromPort: 0, ToPort: 65535 in ingress rules
+
+## Best Practices
+
+1. **Least Privilege**: Only allow necessary ports and protocols
+2. **Restrict Source IP**: Use specific IP ranges or security groups as sources
+3. **No Administrative Access from Internet**: Never allow SSH/RDP from 0.0.0.0/0
+4. **Use Bastion Hosts**: Access internal resources through bastion hosts
+5. **Regular Reviews**: Audit security group rules quarterly
+
+## Remediation Steps
+
+### Remove Unrestricted SSH Access
+```
+aws ec2 revoke-security-group-ingress \
+    --group-id sg-xxxxx \
+    --protocol tcp \
+    --port 22 \
+    --cidr 0.0.0.0/0
+```
+
+### Add Restricted SSH Access
+```
+aws ec2 authorize-security-group-ingress \
+    --group-id sg-xxxxx \
+    --protocol tcp \
+    --port 22 \
+    --cidr YOUR_IP/32
+```
+
+## Intent-Specific Recommendations
+
+### web_server Intent
+- Allow 80/443 from 0.0.0.0/0 (OK for web servers)
+- Restrict SSH to bastion host or corporate IP
+- Block database ports entirely
+
+### database_server Intent
+- NO public access - use private subnets
+- Only allow database port from application security group
+- Use VPC endpoints for AWS service access
+
+### application_server Intent
+- Only allow application port from load balancer security group
+- Use security group referencing instead of CIDR blocks
+- Implement defense in depth with NACLs
+
+## References
+
+- EC2 Security Groups Documentation: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
