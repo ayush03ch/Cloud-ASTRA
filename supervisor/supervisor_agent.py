@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify
 from supervisor.role_manager import assume_role
 from supervisor.dispatcher import Dispatcher
 from fixer_agent.fixer_agent import FixerAgent
+from agents.utils.solution_generator import SolutionGenerator
 
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
@@ -50,6 +51,15 @@ class SupervisorAgent:
             lambda_function_name=lambda_function_name,
             lambda_checks=lambda_checks
         )
+        
+        # Debug: Log the raw findings structure
+        logging.debug(f"[SupervisorAgent] Raw findings structure: {type(findings)}")
+        if isinstance(findings, dict):
+            for svc, svc_findings in findings.items():
+                logging.debug(f"[SupervisorAgent] Service {svc}: {len(svc_findings) if isinstance(svc_findings, list) else 'Not a list'} findings")
+                if isinstance(svc_findings, list) and len(svc_findings) > 0:
+                    logging.debug(f"[SupervisorAgent] First finding keys: {list(svc_findings[0].keys())}")
+        
         logging.info(f"Findings: {json.dumps(findings, indent=2)}")
 
         # Count total issues found
@@ -72,9 +82,14 @@ class SupervisorAgent:
         # Log the results
         logging.info(f"Auto-fixes applied: {len(applied_fixes)}")
         logging.info(f"Pending manual fixes: {len(pending_fixes)}")
+        
+        # Generate solutions for findings using LLM
+        logging.info("[SupervisorAgent] 💡 Enriching findings with LLM-generated solutions...")
+        enriched_findings = self._generate_solutions(findings, service)
+        logging.info("[SupervisorAgent] ✅ Findings enrichment complete")
 
         return {
-            "findings": findings,
+            "findings": enriched_findings,
             "auto_fixes_applied": applied_fixes,
             "pending_fixes": pending_fixes,
             "summary": {
@@ -84,6 +99,65 @@ class SupervisorAgent:
                 "pending_manual": len(pending_fixes)
             }
         }
+    
+    def _generate_solutions(self, findings, service):
+        """Generate solutions for all findings using LLM.
+        
+        Args:
+            findings: Dict of findings by service
+            service: Specific service or None for all
+            
+        Returns:
+            Findings dict enriched with solution steps
+        """
+        try:
+            logging.info("[Supervisor] 🚀 Starting solution generation pipeline")
+            solution_gen = SolutionGenerator()
+            logging.info("[Supervisor] ✅ Solution generator initialized")
+            
+            enriched_findings = {}
+            
+            if isinstance(findings, dict):
+                for service_name, service_findings in findings.items():
+                    if service and service_name != service:
+                        # Skip services not requested
+                        logging.debug(f"[Supervisor] Skipping {service_name} (not requested)")
+                        enriched_findings[service_name] = service_findings
+                        continue
+                    
+                    if not isinstance(service_findings, list):
+                        logging.debug(f"[Supervisor] {service_name} findings not a list, skipping")
+                        enriched_findings[service_name] = service_findings
+                        continue
+                    
+                    # Generate solutions for each finding
+                    try:
+                        logging.info(f"[Supervisor] 📋 Generating solutions for {len(service_findings)} {service_name} findings")
+                        
+                        solutions = solution_gen.generate_solutions(
+                            findings=service_findings,
+                            rag_documents=None,
+                            service=service_name,
+                            context=None
+                        )
+                        
+                        enriched_findings[service_name] = solutions
+                        logging.info(f"[Supervisor] ✅ Generated solutions for {len(solutions)} {service_name} findings")
+                        
+                    except Exception as e:
+                        logging.error(f"[Supervisor] ❌ Failed to generate solutions for {service_name}: {e}")
+                        enriched_findings[service_name] = service_findings
+            else:
+                logging.debug("[Supervisor] Findings not a dict, returning as-is")
+                enriched_findings = findings
+            
+            logging.info("[Supervisor] ✅ Solution generation pipeline completed")
+            return enriched_findings
+            
+        except Exception as e:
+            logging.error(f"[Supervisor] ❌ Solution generation pipeline failed: {e}")
+            # Return original findings if solution generation fails
+            return findings
 
     def apply_manual_fix(self, resource, fix_type):
         """Apply a specific manual fix for a resource."""

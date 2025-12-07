@@ -44,9 +44,9 @@ class Dispatcher:
             try:
                 s3_agent = S3Agent(creds=self.creds)
                 results["s3"] = s3_agent.scan(user_intent_input=user_intent_input)
-                logger.info("S3 scan completed successfully")
+                logger.info(f"S3 scan completed successfully with {len(results['s3'])} findings")
             except Exception as e:
-                logger.error(f"S3 scan failed: {e}")
+                logger.error(f"S3 scan failed: {e}", exc_info=True)
                 results["s3"] = []
         
         # EC2 Agent

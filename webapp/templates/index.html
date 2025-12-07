@@ -1079,6 +1079,214 @@
             font-size: 11px;
             line-height: 1.6;
         }
+        
+        /* Solution Display Styles */
+        .tier-item-solution {
+            margin-top: var(--spacing-md);
+            border-top: 1px solid var(--border-primary);
+            padding-top: var(--spacing-md);
+        }
+        
+        .solution-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-bottom: var(--spacing-sm);
+            transition: var(--transition);
+        }
+        
+        .solution-header:hover {
+            background: var(--bg-hover);
+        }
+        
+        .solution-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .solution-toggle {
+            color: var(--text-tertiary);
+            transition: transform 200ms ease;
+        }
+        
+        .solution-header.expanded .solution-toggle {
+            transform: rotate(180deg);
+        }
+        
+        .solution-content {
+            display: none;
+            animation: slideDown 200ms ease;
+        }
+        
+        .solution-header.expanded + .solution-content {
+            display: block;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .solution-metadata {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .metadata-badge {
+            display: inline-block;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .metadata-badge.difficulty-easy {
+            border-color: #51CF66;
+            color: #51CF66;
+            background: rgba(81, 207, 102, 0.1);
+        }
+        
+        .metadata-badge.difficulty-medium {
+            border-color: var(--terminal-warning);
+            color: var(--terminal-warning);
+            background: rgba(220, 220, 170, 0.1);
+        }
+        
+        .metadata-badge.difficulty-hard {
+            border-color: var(--terminal-error);
+            color: var(--terminal-error);
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .metadata-badge.automation {
+            border-color: var(--accent-light);
+            color: var(--accent-light);
+            background: rgba(129, 140, 248, 0.1);
+        }
+        
+        .solution-guide {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-md);
+            border-left: 3px solid var(--accent-primary);
+            border-radius: 4px;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        
+        .solution-steps {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .solution-step {
+            display: flex;
+            gap: var(--spacing-md);
+            background: var(--bg-tertiary);
+            padding: var(--spacing-md);
+            border-radius: 4px;
+            border-left: 3px solid var(--accent-primary);
+        }
+        
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            font-weight: 600;
+            font-size: 13px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .step-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .step-description {
+            color: var(--text-secondary);
+            font-size: 11px;
+            line-height: 1.5;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .step-action,
+        .step-details,
+        .step-hint {
+            color: var(--text-tertiary);
+            font-size: 11px;
+            margin-top: var(--spacing-xs);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: var(--bg-secondary);
+            border-left: 2px solid var(--accent-secondary);
+            border-radius: 2px;
+        }
+        
+        .solution-prerequisites,
+        .solution-verification,
+        .solution-warnings {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-md);
+            border-radius: 4px;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+            font-size: 12px;
+        }
+        
+        .solution-prerequisites strong,
+        .solution-verification strong {
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .solution-warnings strong {
+            color: var(--terminal-warning);
+            display: block;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .solution-prerequisites ul,
+        .solution-verification ol,
+        .solution-warnings ul {
+            margin-left: var(--spacing-md);
+            color: var(--text-secondary);
+        }
+        
+        .solution-prerequisites li,
+        .solution-verification li,
+        .solution-warnings li {
+            margin-bottom: var(--spacing-xs);
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
@@ -2122,6 +2330,60 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                                             <div class="tier-item-issue">${f.issue || f.description || f.rule_name || 'Issue detected'}</div>
                                             ${f.details || f.reasoning ? `<div class="tier-item-details">${f.details || f.reasoning}</div>` : ''}
                                             ${f.intent ? `<div class="tier-item-details">Detected Intent: ${f.intent}</div>` : ''}
+                                            ${f.solution && f.solution.length > 0 ? `
+                                                <div class="tier-item-solution">
+                                                    <div class="solution-header" onclick="toggleSolution(event, this)">
+                                                        <span class="solution-title">💡 Solution Steps</span>
+                                                        <span class="solution-toggle">▼</span>
+                                                    </div>
+                                                    <div class="solution-content">
+                                                        <div class="solution-metadata">
+                                                            ${f.difficulty_level ? `<span class="metadata-badge difficulty-${f.difficulty_level}">Difficulty: ${f.difficulty_level}</span>` : ''}
+                                                            ${f.time_estimate ? `<span class="metadata-badge">⏱️ ${f.time_estimate}</span>` : ''}
+                                                            ${f.automation_possible ? `<span class="metadata-badge automation">🤖 Automation Possible</span>` : ''}
+                                                        </div>
+                                                        ${f.implementation_guide ? `<div class="solution-guide"><strong>Overview:</strong> ${f.implementation_guide}</div>` : ''}
+                                                        <div class="solution-steps">
+                                                            ${f.solution.map((step, idx) => `
+                                                                <div class="solution-step">
+                                                                    <div class="step-number">${step.step_number || idx + 1}</div>
+                                                                    <div class="step-content">
+                                                                        <div class="step-title">${step.title || 'Step'}</div>
+                                                                        <div class="step-description">${step.description || ''}</div>
+                                                                        ${step.action ? `<div class="step-action"><strong>Action Type:</strong> ${step.action}</div>` : ''}
+                                                                        ${step.details ? `<div class="step-details"><strong>Details:</strong> ${step.details}</div>` : ''}
+                                                                        ${step.screenshot_hint ? `<div class="step-hint"><strong>Location:</strong> ${step.screenshot_hint}</div>` : ''}
+                                                                    </div>
+                                                                </div>
+                                                            `).join('')}
+                                                        </div>
+                                                        ${f.prerequisites && f.prerequisites.length > 0 ? `
+                                                            <div class="solution-prerequisites">
+                                                                <strong>Prerequisites:</strong>
+                                                                <ul>
+                                                                    ${f.prerequisites.map(pre => `<li>${pre}</li>`).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        ` : ''}
+                                                        ${f.verification_steps && f.verification_steps.length > 0 ? `
+                                                            <div class="solution-verification">
+                                                                <strong>Verification Steps:</strong>
+                                                                <ol>
+                                                                    ${f.verification_steps.map(step => `<li>${step}</li>`).join('')}
+                                                                </ol>
+                                                            </div>
+                                                        ` : ''}
+                                                        ${f.warnings && f.warnings.length > 0 ? `
+                                                            <div class="solution-warnings">
+                                                                <strong>⚠️ Warnings:</strong>
+                                                                <ul>
+                                                                    ${f.warnings.map(warn => `<li>${warn}</li>`).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
                                         </div>
                                     `).join('')}
                                 </div>
@@ -2152,6 +2414,60 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                                             <div class="tier-item-issue">${f.issue || f.description || f.rule_name || 'Issue detected'}</div>
                                             ${f.details || f.reasoning ? `<div class="tier-item-details">${f.details || f.reasoning}</div>` : ''}
                                             ${f.intent ? `<div class="tier-item-details">Detected Intent: ${f.intent}</div>` : ''}
+                                            ${f.solution && f.solution.length > 0 ? `
+                                                <div class="tier-item-solution">
+                                                    <div class="solution-header" onclick="toggleSolution(event, this)">
+                                                        <span class="solution-title">💡 Solution Steps</span>
+                                                        <span class="solution-toggle">▼</span>
+                                                    </div>
+                                                    <div class="solution-content">
+                                                        <div class="solution-metadata">
+                                                            ${f.difficulty_level ? `<span class="metadata-badge difficulty-${f.difficulty_level}">Difficulty: ${f.difficulty_level}</span>` : ''}
+                                                            ${f.time_estimate ? `<span class="metadata-badge">⏱️ ${f.time_estimate}</span>` : ''}
+                                                            ${f.automation_possible ? `<span class="metadata-badge automation">🤖 Automation Possible</span>` : ''}
+                                                        </div>
+                                                        ${f.implementation_guide ? `<div class="solution-guide"><strong>Overview:</strong> ${f.implementation_guide}</div>` : ''}
+                                                        <div class="solution-steps">
+                                                            ${f.solution.map((step, idx) => `
+                                                                <div class="solution-step">
+                                                                    <div class="step-number">${step.step_number || idx + 1}</div>
+                                                                    <div class="step-content">
+                                                                        <div class="step-title">${step.title || 'Step'}</div>
+                                                                        <div class="step-description">${step.description || ''}</div>
+                                                                        ${step.action ? `<div class="step-action"><strong>Action Type:</strong> ${step.action}</div>` : ''}
+                                                                        ${step.details ? `<div class="step-details"><strong>Details:</strong> ${step.details}</div>` : ''}
+                                                                        ${step.screenshot_hint ? `<div class="step-hint"><strong>Location:</strong> ${step.screenshot_hint}</div>` : ''}
+                                                                    </div>
+                                                                </div>
+                                                            `).join('')}
+                                                        </div>
+                                                        ${f.prerequisites && f.prerequisites.length > 0 ? `
+                                                            <div class="solution-prerequisites">
+                                                                <strong>Prerequisites:</strong>
+                                                                <ul>
+                                                                    ${f.prerequisites.map(pre => `<li>${pre}</li>`).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        ` : ''}
+                                                        ${f.verification_steps && f.verification_steps.length > 0 ? `
+                                                            <div class="solution-verification">
+                                                                <strong>Verification Steps:</strong>
+                                                                <ol>
+                                                                    ${f.verification_steps.map(step => `<li>${step}</li>`).join('')}
+                                                                </ol>
+                                                            </div>
+                                                        ` : ''}
+                                                        ${f.warnings && f.warnings.length > 0 ? `
+                                                            <div class="solution-warnings">
+                                                                <strong>⚠️ Warnings:</strong>
+                                                                <ul>
+                                                                    ${f.warnings.map(warn => `<li>${warn}</li>`).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
                                         </div>
                                     `).join('')}
                                 </div>
@@ -2182,6 +2498,60 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                                             <div class="tier-item-issue">${f.issue || f.description || f.rule_name || 'Issue detected'}</div>
                                             ${f.details || f.reasoning ? `<div class="tier-item-details">${f.details || f.reasoning}</div>` : ''}
                                             ${f.intent ? `<div class="tier-item-details">Detected Intent: ${f.intent}</div>` : ''}
+                                            ${f.solution && f.solution.length > 0 ? `
+                                                <div class="tier-item-solution">
+                                                    <div class="solution-header" onclick="toggleSolution(event, this)">
+                                                        <span class="solution-title">💡 Solution Steps</span>
+                                                        <span class="solution-toggle">▼</span>
+                                                    </div>
+                                                    <div class="solution-content">
+                                                        <div class="solution-metadata">
+                                                            ${f.difficulty_level ? `<span class="metadata-badge difficulty-${f.difficulty_level}">Difficulty: ${f.difficulty_level}</span>` : ''}
+                                                            ${f.time_estimate ? `<span class="metadata-badge">⏱️ ${f.time_estimate}</span>` : ''}
+                                                            ${f.automation_possible ? `<span class="metadata-badge automation">🤖 Automation Possible</span>` : ''}
+                                                        </div>
+                                                        ${f.implementation_guide ? `<div class="solution-guide"><strong>Overview:</strong> ${f.implementation_guide}</div>` : ''}
+                                                        <div class="solution-steps">
+                                                            ${f.solution.map((step, idx) => `
+                                                                <div class="solution-step">
+                                                                    <div class="step-number">${step.step_number || idx + 1}</div>
+                                                                    <div class="step-content">
+                                                                        <div class="step-title">${step.title || 'Step'}</div>
+                                                                        <div class="step-description">${step.description || ''}</div>
+                                                                        ${step.action ? `<div class="step-action"><strong>Action Type:</strong> ${step.action}</div>` : ''}
+                                                                        ${step.details ? `<div class="step-details"><strong>Details:</strong> ${step.details}</div>` : ''}
+                                                                        ${step.screenshot_hint ? `<div class="step-hint"><strong>Location:</strong> ${step.screenshot_hint}</div>` : ''}
+                                                                    </div>
+                                                                </div>
+                                                            `).join('')}
+                                                        </div>
+                                                        ${f.prerequisites && f.prerequisites.length > 0 ? `
+                                                            <div class="solution-prerequisites">
+                                                                <strong>Prerequisites:</strong>
+                                                                <ul>
+                                                                    ${f.prerequisites.map(pre => `<li>${pre}</li>`).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        ` : ''}
+                                                        ${f.verification_steps && f.verification_steps.length > 0 ? `
+                                                            <div class="solution-verification">
+                                                                <strong>Verification Steps:</strong>
+                                                                <ol>
+                                                                    ${f.verification_steps.map(step => `<li>${step}</li>`).join('')}
+                                                                </ol>
+                                                            </div>
+                                                        ` : ''}
+                                                        ${f.warnings && f.warnings.length > 0 ? `
+                                                            <div class="solution-warnings">
+                                                                <strong>⚠️ Warnings:</strong>
+                                                                <ul>
+                                                                    ${f.warnings.map(warn => `<li>${warn}</li>`).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
                                         </div>
                                     `).join('')}
                                 </div>
@@ -2207,6 +2577,11 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
         }
         
         function toggleTier(event, element) {
+            event.stopPropagation();
+            element.classList.toggle('expanded');
+        }
+        
+        function toggleSolution(event, element) {
             event.stopPropagation();
             element.classList.toggle('expanded');
         }

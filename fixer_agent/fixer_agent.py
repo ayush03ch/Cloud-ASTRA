@@ -29,6 +29,12 @@ class FixerAgent:
             findings = actual_findings
         
         for finding in findings:
+            # Validate finding has required fields
+            if not finding.get("resource"):
+                continue
+            if not finding.get("issue"):
+                continue
+                
             if finding.get("auto_safe", False):
                 success = self.executor.run(finding)
                 applied_fixes.append({
