@@ -21,6 +21,10 @@ class FixerAgent:
 
         # Extract findings from nested structure if needed
         if isinstance(findings, dict):
+            # Handle nested 'findings' key
+            if 'findings' in findings and isinstance(findings['findings'], dict):
+                findings = findings['findings']
+            
             # Flatten all findings from all services
             actual_findings = []
             for service, service_findings in findings.items():

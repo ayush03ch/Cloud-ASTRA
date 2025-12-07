@@ -12,11 +12,11 @@ class MissingBackupsRule:
     
     id = "ec2_missing_backups"
     detection = "EC2 instance has no recent EBS snapshots"
-    auto_safe = True  # Safe to create snapshots
+    auto_safe = False  # Requires manual review for backup strategy
     
     def __init__(self):
         self.fix_instructions = None
-        self.can_auto_fix = True
+        self.can_auto_fix = False
         self.fix_type = None
         self.volumes_without_backups = None
         self.backup_threshold_days = 7
@@ -110,8 +110,7 @@ class MissingBackupsRule:
         
         self.fix_instructions = [
             f"💾 Missing Backups for {instance_id}",
-            f"Found {len(volumes_without_backups)} volumes without recent backups ({total_size} GB total):",
-            ""
+            f"Found {len(volumes_without_backups)} volumes without recent backups ({total_size} GB total):"
         ]
         
         for vol in volumes_without_backups:
@@ -119,8 +118,7 @@ class MissingBackupsRule:
             self.fix_instructions.extend([
                 f"• Volume ID: {vol['volume_id']}",
                 f"  Device: {vol['device']}, Size: {vol['size']} GB",
-                f"  Last backup: {last_backup} ({vol['total_snapshots']} total snapshots)",
-                ""
+                f"  Last backup: {last_backup} ({vol['total_snapshots']} total snapshots)"
             ])
         
         self.fix_instructions.extend([
@@ -129,16 +127,14 @@ class MissingBackupsRule:
             "2. Set up Data Lifecycle Manager (DLM) for automated snapshots",
             "3. Configure retention policy (e.g., daily for 7 days, weekly for 4 weeks)",
             "4. Add tags for easier snapshot management",
-            "",
             "💡 Alternative: Use AWS Backup for comprehensive backup strategy",
             "1. Go to AWS Backup console",
             "2. Create backup plan with appropriate schedule",
             "3. Assign EC2 instances to backup plan",
-            "",
             "💰 Cost: Snapshots are charged for incremental storage used"
         ])
         
-        self.can_auto_fix = True  # Safe to create snapshots
+        self.can_auto_fix = False  # Requires manual review for backup strategy
         self.fix_type = "create_ebs_snapshots"
     
     def fix(self, client, instance_id):

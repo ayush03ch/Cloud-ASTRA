@@ -179,7 +179,6 @@ class AccessKeyRotationRule:
         self.fix_instructions = [
             f"🔑 Access Key Rotation Required",
             f"Total Keys: {len(old_keys)} | Critical: {len(critical_keys)} | High: {len(high_keys)} | Medium: {len(medium_keys)}",
-            "",
             "🚨 Critical Keys (Immediate Action Required):"
         ]
         
@@ -194,10 +193,7 @@ class AccessKeyRotationRule:
         if len(critical_keys) > 5:
             self.fix_instructions.append(f"  ... and {len(critical_keys) - 5} more critical keys")
         
-        self.fix_instructions.extend([
-            "",
-            "⚠️ High Priority Keys:"
-        ])
+        self.fix_instructions.append("⚠️ High Priority Keys:")
         
         for key in high_keys[:3]:  # Show first 3 high priority
             self.fix_instructions.extend([
@@ -206,7 +202,6 @@ class AccessKeyRotationRule:
             ])
         
         self.fix_instructions.extend([
-            "",
             "🔧 Access Key Rotation Process:",
             "1. Create new access key for user",
             "2. Update applications/services to use new key", 
@@ -214,13 +209,11 @@ class AccessKeyRotationRule:
             "4. Deactivate old key (keep for rollback)",
             "5. Monitor for errors for 24-48 hours",
             "6. Delete old key once confirmed working",
-            "",
             "🔒 For Unused Keys:",
             "1. Confirm key is truly unused",
             "2. Deactivate key first (reversible)",
             "3. Monitor for any service disruptions", 
             "4. Delete key after confirmation period",
-            "",
             "⚠️ Impact: Applications using old keys will stop working after rotation"
         ])
         

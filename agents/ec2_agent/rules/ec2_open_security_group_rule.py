@@ -93,8 +93,7 @@ class OpenSecurityGroupRule:
             self.fix_instructions.extend([
                 f"• Security Group: {rule['sg_name']} ({rule['sg_id']})",
                 f"  Protocol: {rule['protocol']}, {port_info}",
-                f"  Source: {rule['cidr']} (allows access from anywhere)",
-                ""
+                f"  Source: {rule['cidr']} (allows access from anywhere)"
             ])
         
         self.fix_instructions.extend([
@@ -105,7 +104,6 @@ class OpenSecurityGroupRule:
             "4. Replace 0.0.0.0/0 with specific IP ranges or security groups",
             "5. For web servers, consider using a load balancer",
             "6. Test connectivity after changes",
-            "",
             "⚠️ Impact: May affect application accessibility"
         ])
         

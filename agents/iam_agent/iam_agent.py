@@ -277,12 +277,19 @@ class IAMAgent:
         rag_findings_count = sum(1 for f in findings if f.get("source") == "rag")
         print(f"[IAMAgent] TIER 2 (RAG): Found {rag_findings_count} additional issues")
         
-        # TIER 3: LLM fallback
+        # TIER 3: LLM fallback (LIMITED to 5 resources to avoid quota)
         if self.llm_analyzer:
-            print(f"\n[IAMAgent] TIER 3 (LLM): Starting Gemini analysis...")
+            print(f"\n[IAMAgent] TIER 3 (LLM): Starting Gemini analysis (limited to 5 resources)...")
             llm_findings_count = 0
+            analyzed_count = 0
+            max_llm_resources = 5  # Limit to avoid Gemini quota exhaustion
+            
             for resource_type, resource_list in resources_to_scan.items():
                 for resource in resource_list:
+                    if analyzed_count >= max_llm_resources:
+                        print(f"[IAMAgent] TIER 3 (LLM): Reached limit of {max_llm_resources} resources, skipping remaining...")
+                        break
+                        
                     resource_name = self._get_resource_name(resource_type, resource)
                     resource_findings = [f for f in findings if f.get("resource") == resource_name]
                     
@@ -304,8 +311,13 @@ class IAMAgent:
                                                'intent': intent.value, 'intent_confidence': confidence, 'rule_id': 'llm_fallback'})
                             findings.append(llm_finding)
                             llm_findings_count += 1
+                        
+                        analyzed_count += 1
+                
+                if analyzed_count >= max_llm_resources:
+                    break
             
-            print(f"[IAMAgent] TIER 3 (LLM): Found {llm_findings_count} additional issues")
+            print(f"[IAMAgent] TIER 3 (LLM): Found {llm_findings_count} additional issues from {analyzed_count} resources")
         else:
             print(f"[IAMAgent] TIER 3 (LLM): Skipped - Gemini API not configured")
         
@@ -576,7 +588,10 @@ class IAMAgent:
             if resource_type == 'user':
                 config['user'] = self.client.get_user(UserName=resource_name)
                 config['policies'] = self.client.list_attached_user_policies(UserName=resource_name).get('AttachedPolicies', [])
-                config['groups'] = self.client.list_groups_for_user(UserName=resource_name).get('Groups', [])
+                try:
+                    config['groups'] = self.client.list_groups_for_user(UserName=resource_name).get('Groups', [])
+                except Exception:
+                    config['groups'] = []  # Handle permission errors gracefully
                 config['access_keys'] = self.client.list_access_keys(UserName=resource_name).get('AccessKeyMetadata', [])
                 try:
                     config['mfa_devices'] = self.client.list_mfa_devices(UserName=resource_name).get('MFADevices', [])
@@ -586,11 +601,27 @@ class IAMAgent:
                 config['role'] = self.client.get_role(RoleName=resource_name)
                 config['policies'] = self.client.list_attached_role_policies(RoleName=resource_name).get('AttachedPolicies', [])
             elif resource_type == 'policy':
-                config['policy'] = self.client.get_policy(PolicyArn=resource_name)
-                config['policy_version'] = self.client.get_policy_version(
-                    PolicyArn=resource_name,
-                    VersionId=config['policy']['Policy']['DefaultVersionId']
-                )
+                # Construct full ARN if only policy name is provided
+                policy_arn = resource_name
+                if not resource_name.startswith('arn:'):
+                    # Get account ID from STS
+                    try:
+                        import boto3
+                        sts = boto3.client('sts')
+                        account_id = sts.get_caller_identity()['Account']
+                        policy_arn = f"arn:aws:iam::{account_id}:policy/{resource_name}"
+                    except Exception as e:
+                        print(f"Warning: Could not construct policy ARN for {resource_name}: {e}")
+                        return config
+                
+                try:
+                    config['policy'] = self.client.get_policy(PolicyArn=policy_arn)
+                    config['policy_version'] = self.client.get_policy_version(
+                        PolicyArn=policy_arn,
+                        VersionId=config['policy']['Policy']['DefaultVersionId']
+                    )
+                except Exception as e:
+                    print(f"Warning: Could not get policy details for {policy_arn}: {e}")
         except Exception as e:
             print(f"Error getting config for {resource_type} {resource_name}: {e}")
         

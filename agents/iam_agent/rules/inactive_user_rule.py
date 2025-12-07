@@ -301,7 +301,6 @@ class InactiveUserRule:
         self.fix_instructions = [
             f"👤 Inactive User Management",
             f"Total Inactive: {len(inactive_users)} | High Risk: {len(critical_users)} | Medium: {len(medium_users)} | Low: {len(low_users)}",
-            "",
             "🚨 High Risk Inactive Users:"
         ]
         
@@ -314,27 +313,22 @@ class InactiveUserRule:
             ])
         
         self.fix_instructions.extend([
-            "",
             "🔧 Inactive User Remediation Options:",
-            "",
             "Option 1: Disable User (Reversible)",
             "1. Deactivate all access keys",
             "2. Remove login profile (console access)",
             "3. Keep user and policies for potential reactivation",
             "4. Monitor for 30 days before deletion",
-            "",
             "Option 2: Remove Permissions (Conservative)",
             "1. Detach all policies",
             "2. Remove from all groups",
             "3. Keep user account but remove access",
             "4. Re-enable when user becomes active",
-            "",
             "Option 3: Full Cleanup (Irreversible)",
             "1. Delete all access keys",
             "2. Delete login profile",
             "3. Detach all policies and remove from groups",
             "4. Delete user account",
-            "",
             "⚠️ Impact: Users will lose all access immediately"
         ])
         

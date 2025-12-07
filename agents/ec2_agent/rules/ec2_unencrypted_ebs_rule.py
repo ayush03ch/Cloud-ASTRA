@@ -77,16 +77,14 @@ class UnencryptedEBSRule:
         
         self.fix_instructions = [
             f"🔐 Unencrypted EBS Volumes for {instance_id}",
-            f"Found {len(unencrypted_volumes)} unencrypted volumes ({total_size} GB total):",
-            ""
+            f"Found {len(unencrypted_volumes)} unencrypted volumes ({total_size} GB total):"
         ]
         
         for vol in unencrypted_volumes:
             self.fix_instructions.extend([
                 f"• Volume ID: {vol['volume_id']}",
                 f"  Device: {vol['device']}, Size: {vol['size']} GB, Type: {vol['type']}",
-                f"  State: {vol['state']}",
-                ""
+                f"  State: {vol['state']}"
             ])
         
         self.fix_instructions.extend([
@@ -97,11 +95,9 @@ class UnencryptedEBSRule:
             "4. Detach original volume and attach encrypted volume",
             "5. Update device mapping if necessary", 
             "6. Start instance and verify functionality",
-            "",
             "💡 Alternative: Enable encryption by default for new volumes",
             "1. Go to EC2 > Settings > EBS encryption",
             "2. Enable 'Always encrypt new EBS volumes'",
-            "",
             "⚠️ Impact: Instance downtime required for encryption"
         ])
         

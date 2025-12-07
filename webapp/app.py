@@ -569,5 +569,74 @@ def api_health():
         "version": "2.0.0"
     })
 
+@app.route('/api/apply-fix', methods=['POST'])
+def api_apply_fix():
+    """
+    Apply a specific fix to a resource.
+    
+    Expected JSON:
+    {
+        "role_arn": "arn:aws:iam::account:role/name",
+        "external_id": "external-id",
+        "region": "us-east-1",
+        "service": "s3",
+        "resource": "bucket-name",
+        "fix_type": "public_access_block"
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        # Extract parameters
+        role_arn = data.get('role_arn')
+        external_id = data.get('external_id', 'my-cloud-astra-role')
+        region = data.get('region', 'us-east-1')
+        service = data.get('service')
+        resource = data.get('resource')
+        fix_type = data.get('fix_type')
+        
+        if not all([role_arn, resource, fix_type]):
+            return jsonify({"error": "Missing required parameters: role_arn, resource, fix_type"}), 400
+        
+        # Initialize supervisor and assume role
+        supervisor = SupervisorAgent(role_arn, external_id, region)
+        
+        try:
+            creds = supervisor.assume()
+            app.logger.info(f"Successfully assumed role for fix: {role_arn}")
+        except Exception as e:
+            app.logger.error(f"Failed to assume role: {e}")
+            return jsonify({"error": f"Failed to assume role: {str(e)}"}), 403
+        
+        # Apply the fix using supervisor's method
+        try:
+            result = supervisor.apply_manual_fix(resource, fix_type)
+            
+            if result.get('success'):
+                return jsonify({
+                    "status": "success",
+                    "message": result.get('message', 'Fix applied successfully'),
+                    "details": result.get('details', []),
+                    "resource": resource,
+                    "fix_type": fix_type
+                })
+            else:
+                return jsonify({
+                    "status": "error",
+                    "message": result.get('message', 'Fix application failed'),
+                    "details": result.get('details', [])
+                }), 500
+        
+        except Exception as e:
+            app.logger.error(f"Error applying fix: {e}")
+            return jsonify({"error": f"Error applying fix: {str(e)}"}), 500
+    
+    except Exception as e:
+        app.logger.error(f"Error in /api/apply-fix: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

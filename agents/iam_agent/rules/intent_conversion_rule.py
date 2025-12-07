@@ -1,4 +1,4 @@
-class IAMIntentConversion:
+class IAMIntentConversionRule:
     id = "iam_intent_conversion"
     detection = "IAM config conflicts with stated user intent"
     auto_safe = False
@@ -47,11 +47,9 @@ class IAMIntentConversion:
             self.fix_instructions = [
                 f"Current: {conflict['current_config']}",
                 f"User Intent: {conflict['user_intent']}",
-                "",
                 "🔧 Conversion Steps:",
                 "1. Detach AdministratorAccess policy",
                 "2. Attach only necessary permissions",
-                "",
                 "⚠️ Will restrict excessive permissions."
             ]
             
@@ -62,11 +60,9 @@ class IAMIntentConversion:
             self.fix_instructions = [
                f"Current: {conflict['current_config']}",
                 f"User Intent: {conflict['user_intent']}",
-                "",
                 "🔧 Conversion Steps:",
                 "1. Enroll user with MFA device",
                 "2. Require MFA for console/login",
-                "",
                 "⚠️ User login will require MFA." 
             ]
             

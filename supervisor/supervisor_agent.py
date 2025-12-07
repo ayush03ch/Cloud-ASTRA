@@ -68,10 +68,13 @@ class SupervisorAgent:
         
         # Flatten and count findings
         if isinstance(findings, dict):
-            for service_name, service_findings in findings.items():
+            # Handle nested structure with 'findings' key
+            findings_data = findings.get('findings', findings)
+            for service_name, service_findings in findings_data.items():
                 if isinstance(service_findings, list):
                     total_findings += len(service_findings)
-                    auto_fixable_count += sum(1 for f in service_findings if f.get("auto_safe", False))
+                    # Count findings that can be auto-fixed (both can_auto_fix and auto_safe flags)
+                    auto_fixable_count += sum(1 for f in service_findings if (f.get("auto_safe", False) or f.get("can_auto_fix", False)))
         
         logging.info(f"Total findings: {total_findings}, Auto-fixable: {auto_fixable_count}")
 

@@ -1287,6 +1287,148 @@
             margin-bottom: var(--spacing-xs);
             line-height: 1.5;
         }
+        
+        /* AUTO-FIX BUTTON STYLES */
+        .auto-fix-section {
+            margin-top: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .btn-auto-fix {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #51CF66 0%, #37B24D 100%);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: var(--transition);
+            box-shadow: 0 2px 8px rgba(81, 207, 102, 0.3);
+        }
+        
+        .btn-auto-fix:hover {
+            background: linear-gradient(135deg, #37B24D 0%, #2B8A3E 100%);
+            box-shadow: 0 4px 12px rgba(81, 207, 102, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .btn-auto-fix:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(81, 207, 102, 0.4);
+        }
+        
+        .btn-auto-fix.processing {
+            background: linear-gradient(135deg, #74C0FC 0%, #4DABF7 100%);
+            cursor: wait;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .btn-auto-fix.success {
+            background: linear-gradient(135deg, #51CF66 0%, #37B24D 100%);
+            pointer-events: none;
+        }
+        
+        .btn-auto-fix.error {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FA5252 100%);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .btn-auto-fix-icon {
+            font-size: 16px;
+        }
+        
+        .auto-fix-badge {
+            padding: 4px 12px;
+            background: rgba(81, 207, 102, 0.2);
+            color: #51CF66;
+            border: 1px solid #51CF66;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* MANUAL FIX STEPS STYLES */
+        .manual-fix-section {
+            margin-top: var(--spacing-md);
+            border-top: 1px solid var(--border-primary);
+            padding-top: var(--spacing-md);
+        }
+        
+        .manual-fix-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: var(--spacing-sm);
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-bottom: var(--spacing-sm);
+            transition: var(--transition);
+        }
+        
+        .manual-fix-header:hover {
+            background: var(--bg-hover);
+        }
+        
+        .manual-fix-title {
+            color: var(--terminal-warning);
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .manual-fix-toggle {
+            color: var(--text-tertiary);
+            transition: transform 200ms ease;
+        }
+        
+        .manual-fix-header.expanded .manual-fix-toggle {
+            transform: rotate(180deg);
+        }
+        
+        .manual-fix-content {
+            display: none;
+            animation: slideDown 200ms ease;
+        }
+        
+        .manual-fix-header.expanded + .manual-fix-content {
+            display: block;
+        }
+        
+        .manual-fix-steps {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-md);
+            padding-left: var(--spacing-xl);
+            border-left: 3px solid var(--terminal-warning);
+            border-radius: 4px;
+            margin: 0;
+        }
+        
+        .manual-fix-steps li {
+            color: var(--text-secondary);
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .manual-fix-steps li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .manual-fix-steps li strong {
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body>
@@ -2308,8 +2450,23 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 
                 if (allFindings && allFindings.length > 0) {
                     allFindings.forEach(finding => {
-                        // Determine tier from various possible fields
-                        let tier = finding.tier || finding.severity || finding.priority || 2;
+                        // Determine tier - prioritize explicit tier, then source, then default to 1 for rule-based findings
+                        let tier = finding.tier || finding.severity || finding.priority;
+                        
+                        // If no tier is set but it's from rules, default to Tier 1
+                        if (!tier && finding.source === 'rule') {
+                            tier = 1;
+                        }
+                        
+                        // If still no tier, check if it has rule_id (indicates Tier 1 rule-based detection)
+                        if (!tier && finding.rule_id && finding.rule_id !== 'llm_fallback') {
+                            tier = 1;
+                        }
+                        
+                        // Default to tier 2 if nothing else
+                        if (!tier) {
+                            tier = 2;
+                        }
                         
                         // Normalize string severities to numeric tiers
                         if (typeof tier === 'string') {
@@ -2355,6 +2512,31 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                                             <div class="tier-item-issue">${f.issue || f.description || f.rule_name || 'Issue detected'}</div>
                                             ${f.details || f.reasoning ? `<div class="tier-item-details">${f.details || f.reasoning}</div>` : ''}
                                             ${f.intent ? `<div class="tier-item-details">Detected Intent: ${f.intent}</div>` : ''}
+                                            
+                                            ${(f.can_auto_fix === true || f.auto_safe === true) ? `
+                                                <div class="auto-fix-section">
+                                                    <button class="btn-auto-fix" onclick="applyAutoFix(event, '${f.service}', '${f.resource || f.bucket || f.instance_id || f.function_name}', '${f.fix_type}', this)">
+                                                        <span class="btn-auto-fix-icon">🤖</span>
+                                                        <span class="btn-auto-fix-text">Auto-Fix</span>
+                                                    </button>
+                                                    <span class="auto-fix-badge">Auto-fixable</span>
+                                                </div>
+                                            ` : ''}
+                                            
+                                            ${f.fix_instructions && f.fix_instructions.length > 0 && (f.can_auto_fix !== true && f.auto_safe !== true) ? `
+                                                <div class="manual-fix-section">
+                                                    <div class="manual-fix-header" onclick="toggleManualSteps(event, this)">
+                                                        <span class="manual-fix-title">📋 Manual Fix Steps</span>
+                                                        <span class="manual-fix-toggle">▼</span>
+                                                    </div>
+                                                    <div class="manual-fix-content">
+                                                        <ol class="manual-fix-steps">
+                                                            ${f.fix_instructions.map(instruction => `<li>${instruction}</li>`).join('')}
+                                                        </ol>
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                            
                                             ${f.solution && f.solution.length > 0 ? `
                                                 <div class="tier-item-solution">
                                                     <div class="solution-header" onclick="toggleSolution(event, this)">
@@ -2439,6 +2621,21 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                                             <div class="tier-item-issue">${f.issue || f.description || f.rule_name || 'Issue detected'}</div>
                                             ${f.details || f.reasoning ? `<div class="tier-item-details">${f.details || f.reasoning}</div>` : ''}
                                             ${f.intent ? `<div class="tier-item-details">Detected Intent: ${f.intent}</div>` : ''}
+                                            
+                                            ${f.fix_instructions && f.fix_instructions.length > 0 ? `
+                                                <div class="manual-fix-section">
+                                                    <div class="manual-fix-header" onclick="toggleManualSteps(event, this)">
+                                                        <span class="manual-fix-title">📋 Manual Fix Steps</span>
+                                                        <span class="manual-fix-toggle">▼</span>
+                                                    </div>
+                                                    <div class="manual-fix-content">
+                                                        <ol class="manual-fix-steps">
+                                                            ${f.fix_instructions.map(instruction => `<li>${instruction}</li>`).join('')}
+                                                        </ol>
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                            
                                             ${f.solution && f.solution.length > 0 ? `
                                                 <div class="tier-item-solution">
                                                     <div class="solution-header" onclick="toggleSolution(event, this)">
@@ -2609,6 +2806,111 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
         function toggleSolution(event, element) {
             event.stopPropagation();
             element.classList.toggle('expanded');
+        }
+        
+        function toggleManualSteps(event, element) {
+            event.stopPropagation();
+            element.classList.toggle('expanded');
+        }
+        
+        async function applyAutoFix(event, service, resource, fixType, button) {
+            event.stopPropagation();
+            
+            // Prevent multiple clicks
+            if (button.classList.contains('processing')) {
+                return;
+            }
+            
+            // Get credentials based on current service
+            let roleArn, externalId, region;
+            if (currentService === 's3') {
+                roleArn = document.getElementById('roleArn').value;
+                externalId = document.getElementById('externalId').value;
+                region = document.getElementById('region').value;
+            } else if (currentService === 'ec2') {
+                roleArn = document.getElementById('ec2RoleArn').value;
+                externalId = document.getElementById('ec2ExternalId').value;
+                region = document.getElementById('ec2Region').value;
+            } else if (currentService === 'iam') {
+                roleArn = document.getElementById('iamRoleArn').value;
+                externalId = document.getElementById('iamExternalId').value;
+                region = document.getElementById('iamRegion').value;
+            } else if (currentService === 'lambda') {
+                roleArn = document.getElementById('lambdaRoleArn').value;
+                externalId = document.getElementById('lambdaExternalId').value;
+                region = document.getElementById('lambdaRegion').value;
+            }
+            
+            if (!roleArn) {
+                alert('Please configure AWS credentials first');
+                return;
+            }
+            
+            // Update button state to processing
+            button.classList.add('processing');
+            const originalText = button.querySelector('.btn-auto-fix-text').textContent;
+            button.querySelector('.btn-auto-fix-text').textContent = 'Applying...';
+            button.querySelector('.btn-auto-fix-icon').textContent = '⚙️';
+            
+            try {
+                const response = await fetch('/api/apply-fix', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        role_arn: roleArn,
+                        external_id: externalId,
+                        region: region,
+                        service: service,
+                        resource: resource,
+                        fix_type: fixType
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.status === 'success') {
+                    // Success state
+                    button.classList.remove('processing');
+                    button.classList.add('success');
+                    button.querySelector('.btn-auto-fix-text').textContent = '✓ Fixed';
+                    button.querySelector('.btn-auto-fix-icon').textContent = '✓';
+                    
+                    // Show success message
+                    alert(`Success! ${result.message}\\n\\nDetails:\\n${result.details.join('\\n')}`);
+                } else {
+                    // Error state
+                    button.classList.remove('processing');
+                    button.classList.add('error');
+                    button.querySelector('.btn-auto-fix-text').textContent = '✗ Failed';
+                    button.querySelector('.btn-auto-fix-icon').textContent = '✗';
+                    
+                    alert(`Error: ${result.message || result.error || 'Fix application failed'}`);
+                    
+                    // Reset after 3 seconds
+                    setTimeout(() => {
+                        button.classList.remove('error');
+                        button.querySelector('.btn-auto-fix-text').textContent = originalText;
+                        button.querySelector('.btn-auto-fix-icon').textContent = '🤖';
+                    }, 3000);
+                }
+            } catch (error) {
+                // Network error
+                button.classList.remove('processing');
+                button.classList.add('error');
+                button.querySelector('.btn-auto-fix-text').textContent = '✗ Error';
+                button.querySelector('.btn-auto-fix-icon').textContent = '✗';
+                
+                alert(`Network error: ${error.message}`);
+                
+                // Reset after 3 seconds
+                setTimeout(() => {
+                    button.classList.remove('error');
+                    button.querySelector('.btn-auto-fix-text').textContent = originalText;
+                    button.querySelector('.btn-auto-fix-icon').textContent = '🤖';
+                }, 3000);
+            }
         }
         
         // Terminal Functions

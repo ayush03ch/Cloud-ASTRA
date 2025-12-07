@@ -229,14 +229,13 @@ class EC2IntentConversionRule:
                 "",
                 "💡 Alternative: Use Application Load Balancer for better scalability"
             ]
-            self.can_auto_fix = True  # Can safely open web ports
+            self.can_auto_fix = False  # Requires manual review for security changes
             self.fix_type = "configure_web_server_access"
         
         elif conflict["type"] == "database_public_access":
             self.fix_instructions = [
                 f"Current: {conflict['current_config']}",
                 f"User Intent: {conflict['user_intent']}",
-                "",
                 "🔧 Database Security Configuration:",
                 "1. Create or identify a private subnet",
                 "2. Stop the database instance",
@@ -244,7 +243,6 @@ class EC2IntentConversionRule:
                 "4. Update security groups to allow access only from application subnets",
                 "5. Update application connection strings to use private IP",
                 "6. Test database connectivity from application servers",
-                "",
                 "⚠️ This will require application configuration changes"
             ]
             self.can_auto_fix = False  # Requires network changes
@@ -254,14 +252,12 @@ class EC2IntentConversionRule:
             self.fix_instructions = [
                 f"Current: {conflict['current_config']}",
                 f"User Intent: {conflict['user_intent']}",
-                "",
                 "🔧 Development Instance Optimization:",
                 "1. Create AMI of current instance",
                 "2. Launch new instance with t3.micro or t3.small",
                 "3. Test development workload on smaller instance",
                 "4. Terminate original instance if tests pass",
                 "5. Set up Instance Scheduler for automatic stop/start",
-                "",
                 "💰 Estimated savings: 50-80% on compute costs"
             ]
             self.can_auto_fix = False  # Requires testing

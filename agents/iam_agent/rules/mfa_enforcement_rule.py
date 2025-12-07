@@ -174,22 +174,18 @@ class MFAEnforcementRule:
         """Set instructions for enabling MFA."""
         self.fix_instructions = [
             f"🔐 MFA Enforcement Required for User: {user_name}",
-            "",
             f"Risk Level: {self.risk_level.upper()}",
             f"Console Access: {'Yes' if self.user_details['has_console_access'] else 'No'}",
             f"Sensitive Permissions: {'Yes' if self.user_details['has_sensitive_permissions'] else 'No'}",
-            "",
             "🔧 MFA Setup Steps:",
             "1. User must set up virtual MFA device (Google Authenticator, Authy, etc.)",
             "2. Scan QR code with authenticator app",
             "3. Enter two consecutive MFA codes to activate",
             "4. (Optional) Set up backup MFA device",
-            "",
             "🔒 Enforcement Options:",
             "Option 1: Force MFA on next login (recommended)",
             "Option 2: Add MFA condition to existing policies",
             "Option 3: Create MFA-required group and add user",
-            "",
             "⚠️ Impact: User will need MFA device for future logins"
         ]
         
