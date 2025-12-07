@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Astra - AWS Security Management</title>
+    <link rel="icon" type="image/png" href="/static/logos/astra-icon-main.png">
     <title>Cloud Astra</title>
     <style>
         :root {
@@ -37,8 +40,9 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
-        html, body {
+
+        html,
+        body {
             width: 100%;
             height: 100%;
             overflow: hidden;
@@ -46,12 +50,12 @@
             background: var(--bg-primary);
             color: var(--text-primary);
         }
-        
+
         .app-wrapper {
             display: flex;
             height: 100vh;
         }
-        
+
         /* SIDEBAR - REFINED */
         .sidebar {
             width: 200px;
@@ -65,15 +69,15 @@
             transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
         }
-        
+
         .sidebar.collapsed {
             width: 56px;
         }
-        
+
         .sidebar.collapsed:hover {
             width: 200px;
         }
-        
+
         .sidebar-header {
             display: flex;
             align-items: center;
@@ -84,21 +88,21 @@
             gap: var(--spacing-sm);
             flex-shrink: 0;
         }
-        
+
         .sidebar.collapsed .sidebar-header {
             justify-content: center;
             padding: 12px 8px;
             flex-direction: column;
             gap: 4px;
         }
-        
+
         .sidebar.collapsed:hover .sidebar-header {
             justify-content: space-between;
             padding: 12px 16px;
             flex-direction: row;
             gap: var(--spacing-sm);
         }
-        
+
         .sidebar-branding {
             display: flex;
             align-items: center;
@@ -106,40 +110,61 @@
             white-space: nowrap;
             overflow: hidden;
         }
-        
+
         .sidebar.collapsed .sidebar-branding {
             width: 100%;
             justify-content: center;
         }
-        
+
         .sidebar.collapsed:hover .sidebar-branding {
             width: auto;
             justify-content: flex-start;
         }
-        
+
+        /* Hide branding icon when sidebar is expanded */
         .sidebar-branding-icon {
             font-size: 20px;
             flex-shrink: 0;
+            display: none;
         }
-        
+
+        .sidebar-branding-icon img {
+            display: block;
+            border-radius: 50%;
+            overflow: hidden;
+            mix-blend-mode: screen;
+        }
+
+        /* Show branding icon only when sidebar is collapsed */
+        .sidebar.collapsed .sidebar-branding-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Hide branding icon on hover of collapsed sidebar */
+        .sidebar.collapsed:hover .sidebar-branding-icon {
+            display: none;
+        }
+
         .sidebar-branding-text {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
             letter-spacing: -0.5px;
             color: var(--text-primary);
             transition: opacity 200ms;
         }
-        
+
         .sidebar.collapsed .sidebar-branding-text {
             opacity: 0;
             width: 0;
         }
-        
+
         .sidebar.collapsed:hover .sidebar-branding-text {
             opacity: 1;
             width: auto;
         }
-        
+
         .sidebar-toggle {
             width: 32px;
             height: 32px;
@@ -155,20 +180,48 @@
             font-size: 16px;
             flex-shrink: 0;
         }
-        
+
         .sidebar-toggle:hover {
             background: var(--bg-tertiary);
             color: var(--accent-light);
         }
-        
+
         .sidebar.collapsed .sidebar-toggle {
             width: 100%;
         }
-        
+
         .sidebar.collapsed:hover .sidebar-toggle {
             width: 32px;
         }
-        
+
+        /* Hide sidebar icon when sidebar is collapsed, show Astra icon */
+        #sidebarToggleIcon {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed #sidebarToggleIcon {
+            display: none !important;
+        }
+
+        .sidebar.collapsed #collapsedAstraIcon {
+            display: flex!important;
+        }
+
+        /* Show sidebar icon on hover, hide Astra icon */
+        .sidebar.collapsed:hover #sidebarToggleIcon {
+            display: flex !important;
+        }
+
+        .sidebar.collapsed:hover #collapsedAstraIcon {
+            display: none!important;
+        }
+
+        #collapsedAstraIcon {
+            display: none !important;
+        }
+
         .sidebar-nav {
             flex: 1;
             display: flex;
@@ -176,7 +229,7 @@
             gap: var(--spacing-xs);
             padding: var(--spacing-sm);
         }
-        
+
         .nav-item {
             height: 40px;
             display: flex;
@@ -194,43 +247,43 @@
             font-weight: 500;
             white-space: nowrap;
         }
-        
+
         .sidebar.collapsed .nav-item {
             justify-content: center;
             padding: 0;
         }
-        
+
         .sidebar.collapsed:hover .nav-item {
             justify-content: flex-start;
             padding: 0 12px;
         }
-        
+
         .sidebar.collapsed .nav-item span:not(.nav-icon) {
             display: none;
         }
-        
+
         .sidebar.collapsed:hover .nav-item span:not(.nav-icon) {
             display: inline;
         }
-        
+
         .nav-icon {
             font-size: 18px;
             flex-shrink: 0;
             width: 20px;
             text-align: center;
         }
-        
+
         .nav-item:hover {
             background: var(--bg-tertiary);
             color: var(--accent-light);
         }
-        
+
         .nav-item.active {
             background: rgba(99, 102, 241, 0.1);
             color: var(--accent-light);
             border-left-color: var(--accent-primary);
         }
-        
+
         .sidebar-footer {
             height: 40px;
             display: flex;
@@ -249,43 +302,43 @@
             border-left: 3px solid transparent;
             white-space: nowrap;
         }
-        
+
         .sidebar.collapsed .sidebar-footer {
             justify-content: center;
             padding: 0;
         }
-        
+
         .sidebar.collapsed:hover .sidebar-footer {
             justify-content: flex-start;
             padding: 0 12px;
         }
-        
+
         .sidebar.collapsed .sidebar-footer span:not(.sidebar-footer-icon) {
             display: none;
         }
-        
+
         .sidebar.collapsed:hover .sidebar-footer span:not(.sidebar-footer-icon) {
             display: inline;
         }
-        
+
         .sidebar-footer-icon {
             font-size: 18px;
             flex-shrink: 0;
             width: 20px;
             text-align: center;
         }
-        
+
         .sidebar-footer:hover {
             background: var(--bg-tertiary);
             color: var(--accent-light);
         }
-        
+
         .sidebar-footer.active {
             background: rgba(99, 102, 241, 0.1);
             color: var(--accent-light);
             border-left-color: var(--accent-primary);
         }
-        
+
         /* LEFT PANEL - CONTENT */
         .left-panel {
             flex: 1;
@@ -294,7 +347,7 @@
             background: var(--bg-primary);
             overflow: hidden;
         }
-        
+
         .panel-header {
             padding: 12px 24px;
             background: var(--bg-secondary);
@@ -304,62 +357,62 @@
             display: flex;
             align-items: center;
         }
-        
+
         .panel-header h2 {
             color: var(--text-primary);
             font-size: 16px;
             margin: 0;
             font-weight: 600;
         }
-        
+
         .panel-content {
             flex: 1;
             overflow-y: auto;
             padding: var(--spacing-lg);
             display: flex;
         }
-        
+
         /* SCROLLBAR STYLING */
         .panel-content::-webkit-scrollbar {
             width: 8px;
         }
-        
+
         .panel-content::-webkit-scrollbar-track {
             background: transparent;
         }
-        
+
         .panel-content::-webkit-scrollbar-thumb {
             background: var(--bg-tertiary);
             border-radius: 4px;
         }
-        
+
         .panel-content::-webkit-scrollbar-thumb:hover {
             background: var(--bg-hover);
         }
-        
+
         .content-wrapper {
             width: 100%;
             display: flex;
             flex-direction: column;
         }
-        
+
         .service-screen {
             display: none;
             flex-direction: column;
             gap: 0;
         }
-        
+
         .service-screen.active {
             display: flex;
         }
-        
+
         .form-wrapper {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: var(--spacing-md);
             margin-bottom: var(--spacing-md);
         }
-        
+
         .form-section {
             padding: var(--spacing-lg);
             background: var(--bg-secondary);
@@ -367,11 +420,11 @@
             border: 1px solid var(--border-primary);
             border-left: 3px solid var(--accent-primary);
         }
-        
+
         .form-section:first-child {
             grid-column: 1 / -1;
         }
-        
+
         .form-section h3 {
             color: var(--text-primary);
             margin-bottom: var(--spacing-md);
@@ -381,15 +434,15 @@
             letter-spacing: 0.5px;
             color: var(--text-secondary);
         }
-        
+
         .form-group {
             margin-bottom: var(--spacing-md);
         }
-        
+
         .form-group:last-child {
             margin-bottom: 0;
         }
-        
+
         label {
             display: block;
             margin-bottom: var(--spacing-xs);
@@ -397,7 +450,7 @@
             color: var(--text-primary);
             font-size: 13px;
         }
-        
+
         input[type="text"],
         input[type="email"],
         select,
@@ -420,13 +473,13 @@
             min-height: 80px;
             resize: vertical;
         }
-        
+
         input[type="text"]:hover,
         select:hover,
         textarea:hover {
             border-color: var(--bg-hover);
         }
-        
+
         input[type="text"]:focus,
         select:focus,
         textarea:focus {
@@ -435,13 +488,13 @@
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
             background: var(--bg-primary);
         }
-        
+
         .help-text {
             font-size: 12px;
             color: var(--text-tertiary);
             margin-top: var(--spacing-xs);
         }
-        
+
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -449,27 +502,27 @@
             margin-top: var(--spacing-md);
             padding: var(--spacing-sm) 0;
         }
-        
+
         .checkbox-group input[type="checkbox"] {
             width: 18px;
             height: 18px;
             cursor: pointer;
             accent-color: var(--accent-primary);
         }
-        
+
         .checkbox-group label {
             margin: 0;
             font-weight: 400;
             cursor: pointer;
             font-size: 13px;
         }
-        
+
         .action-buttons {
             display: flex;
             gap: var(--spacing-md);
             margin-top: var(--spacing-md);
         }
-        
+
         .btn {
             height: 40px;
             border: none;
@@ -480,13 +533,13 @@
             transition: var(--transition);
             flex: 1;
         }
-        
+
         .btn-primary {
             background: var(--accent-primary);
             color: white;
             border: 1px solid var(--accent-secondary);
         }
-        
+
         .btn-primary:hover {
             background: var(--accent-secondary);
             border-color: var(--accent-hover);
@@ -495,13 +548,13 @@
         .btn-primary:active {
             background: var(--accent-hover);
         }
-        
+
         .btn-secondary {
             background: var(--bg-tertiary);
             color: var(--text-primary);
             border: 1px solid var(--border-primary);
         }
-        
+
         .btn-secondary:hover {
             background: var(--bg-hover);
             border-color: var(--text-secondary);
@@ -510,7 +563,7 @@
         .btn-secondary:active {
             background: var(--bg-primary);
         }
-        
+
         .intent-item {
             display: flex;
             align-items: center;
@@ -521,7 +574,7 @@
             border: 1px solid var(--border-primary);
             margin-bottom: var(--spacing-sm);
         }
-        
+
         .intent-item input,
         .intent-item select {
             flex: 1;
@@ -530,7 +583,7 @@
             font-size: 12px;
             height: 26px;
         }
-        
+
         .remove-intent-btn {
             background: transparent;
             color: var(--terminal-error);
@@ -548,7 +601,7 @@
             background: rgba(255, 107, 107, 0.1);
             border-color: var(--terminal-error);
         }
-        
+
         /* SETUP GUIDE SECTION */
         .setup-guide-wrapper {
             padding: var(--spacing-lg);
@@ -559,7 +612,7 @@
             margin-bottom: var(--spacing-lg);
             grid-column: 1 / -1;
         }
-        
+
         .setup-guide-heading {
             color: var(--text-secondary);
             font-size: 14px;
@@ -568,20 +621,20 @@
             letter-spacing: 0.5px;
             margin-bottom: var(--spacing-md);
         }
-        
+
         .setup-guide-container {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             gap: var(--spacing-md);
             align-items: flex-start;
         }
-        
+
         .setup-guide-column {
             display: flex;
             flex-direction: column;
             gap: var(--spacing-sm);
         }
-        
+
         .setup-tab {
             background: var(--bg-tertiary);
             border: 1px solid var(--border-primary);
@@ -589,7 +642,7 @@
             overflow: hidden;
             transition: var(--transition);
         }
-        
+
         .setup-tab-header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-primary);
@@ -602,40 +655,40 @@
             user-select: none;
             transition: var(--transition);
         }
-        
+
         .setup-tab-header:hover {
             background: var(--bg-hover);
         }
-        
+
         .setup-tab-header-text {
             color: var(--text-secondary);
             font-size: 13px;
             font-weight: 600;
             letter-spacing: 0.5px;
         }
-        
+
         .setup-tab-toggle {
             color: var(--text-tertiary);
             font-size: 12px;
             transition: var(--transition);
         }
-        
+
         .setup-tab.expanded .setup-tab-toggle {
             transform: rotate(180deg);
         }
-        
+
         .setup-tab-content {
             max-height: 0;
             overflow: hidden;
             transition: max-height 300ms cubic-bezier(0.4, 0, 0.2, 1);
             padding: 0 16px;
         }
-        
+
         .setup-tab.expanded .setup-tab-content {
             max-height: 800px;
             padding: 16px;
         }
-        
+
         .setup-or-divider {
             display: flex;
             align-items: center;
@@ -646,7 +699,7 @@
             min-width: 40px;
             padding-top: 30px;
         }
-        
+
         .setup-guide-column h3 {
             color: var(--accent-light);
             font-size: 14px;
@@ -655,7 +708,7 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .setup-steps {
             list-style: decimal;
             margin-left: var(--spacing-lg);
@@ -663,26 +716,26 @@
             font-size: 13px;
             line-height: 1.8;
         }
-        
+
         .setup-steps li {
             margin-bottom: var(--spacing-sm);
         }
-        
+
         .setup-steps strong {
             color: var(--accent-light);
         }
-        
+
         .cli-command {
             margin-bottom: var(--spacing-md);
         }
-        
+
         .cmd-label {
             font-size: 12px;
             font-weight: 600;
             color: var(--text-secondary);
             margin-bottom: var(--spacing-xs);
         }
-        
+
         .code-block {
             background: var(--bg-primary);
             border: 1px solid var(--border-primary);
@@ -695,7 +748,7 @@
             margin: 0;
             line-height: 1.5;
         }
-        
+
         .setup-notice {
             background: rgba(220, 220, 170, 0.1);
             border-left: 3px solid var(--terminal-warning);
@@ -705,17 +758,17 @@
             color: var(--text-secondary);
             margin-top: var(--spacing-md);
         }
-        
+
         .setup-notice strong {
             color: var(--terminal-warning);
         }
-        
+
         .setup-divider {
             border: none;
             border-top: 1px solid var(--border-primary);
             margin: var(--spacing-lg) 0;
         }
-        
+
         /* RIGHT PANEL - TERMINAL */
         .right-panel {
             width: 420px;
@@ -724,11 +777,11 @@
             background: var(--terminal-bg);
             border-left: 1px solid var(--border-primary);
         }
-        
+
         .right-panel.active {
             display: flex;
         }
-        
+
         .terminal-header {
             padding: 12px 16px;
             background: var(--bg-secondary);
@@ -738,7 +791,7 @@
             display: flex;
             align-items: center;
         }
-        
+
         .terminal-header h3 {
             margin: 0;
             font-size: 13px;
@@ -747,7 +800,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        
+
         .terminal-container {
             flex: 1;
             display: flex;
@@ -758,7 +811,7 @@
             line-height: 1.6;
             overflow: hidden;
         }
-        
+
         .terminal-output {
             flex: 1;
             overflow-y: auto;
@@ -766,44 +819,44 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        
+
         .terminal-output::-webkit-scrollbar {
             width: 8px;
         }
-        
+
         .terminal-output::-webkit-scrollbar-track {
             background: transparent;
         }
-        
+
         .terminal-output::-webkit-scrollbar-thumb {
             background: rgba(78, 201, 176, 0.2);
             border-radius: 4px;
         }
-        
+
         .terminal-output::-webkit-scrollbar-thumb:hover {
             background: rgba(78, 201, 176, 0.4);
         }
-        
+
         .terminal-output-line {
             margin-bottom: 4px;
         }
-        
+
         .terminal-output-line.error {
             color: var(--terminal-error);
         }
-        
+
         .terminal-output-line.success {
             color: var(--terminal-success);
         }
-        
+
         .terminal-output-line.warning {
             color: var(--terminal-warning);
         }
-        
+
         .terminal-output-line.info {
             color: var(--terminal-info);
         }
-        
+
         .terminal-prompt {
             padding: var(--spacing-md);
             background: var(--terminal-bg);
@@ -813,14 +866,14 @@
             gap: var(--spacing-sm);
             flex-shrink: 0;
         }
-        
+
         .terminal-prompt::before {
             content: '$ ';
             color: var(--terminal-prompt);
             font-weight: 600;
             flex-shrink: 0;
         }
-        
+
         .terminal-input {
             flex: 1;
             background: transparent;
@@ -830,11 +883,11 @@
             font-family: 'Fira Code', 'Courier New', monospace;
             font-size: 12px;
         }
-        
+
         .terminal-input::placeholder {
             color: var(--text-tertiary);
         }
-        
+
         .terminal-actions {
             padding: var(--spacing-md);
             background: var(--terminal-bg);
@@ -843,7 +896,7 @@
             gap: var(--spacing-md);
             flex-shrink: 0;
         }
-        
+
         .terminal-btn {
             flex: 1;
             height: 32px;
@@ -857,7 +910,7 @@
             font-weight: 500;
             transition: var(--transition);
         }
-        
+
         .terminal-btn:hover {
             background: var(--bg-hover);
             border-color: var(--terminal-prompt);
@@ -866,7 +919,7 @@
         .terminal-btn:active {
             background: rgba(78, 201, 176, 0.1);
         }
-        
+
         /* RESULTS */
         .results-panel {
             display: none;
@@ -874,21 +927,21 @@
             flex: 1;
             overflow-y: auto;
         }
-        
+
         .results-panel.active {
             display: flex;
         }
-        
+
         .loading {
             display: none;
             text-align: center;
             padding: var(--spacing-xl);
         }
-        
+
         .loading.active {
             display: block;
         }
-        
+
         .spinner {
             width: 32px;
             height: 32px;
@@ -898,12 +951,17 @@
             animation: spin 1s linear infinite;
             margin: 0 auto var(--spacing-md);
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .result-item {
             margin-bottom: var(--spacing-md);
             padding: var(--spacing-md);
@@ -914,28 +972,28 @@
             border-left: 3px solid var(--terminal-success);
             font-size: 13px;
         }
-        
+
         .result-item.warning {
             border-left-color: var(--terminal-warning);
         }
-        
+
         .result-item.error {
             border-left-color: var(--terminal-error);
         }
-        
+
         .result-item h4 {
             margin-bottom: var(--spacing-sm);
             color: var(--text-primary);
             font-size: 13px;
             font-weight: 600;
         }
-        
+
         .result-item p {
             margin-bottom: var(--spacing-xs);
             color: var(--text-secondary);
             font-size: 12px;
         }
-        
+
         /* TIER-BASED RESULTS */
         .tier-section {
             margin-bottom: var(--spacing-md);
@@ -944,7 +1002,7 @@
             overflow: hidden;
             background: var(--bg-secondary);
         }
-        
+
         .tier-header {
             display: flex;
             align-items: center;
@@ -956,17 +1014,17 @@
             transition: var(--transition);
             user-select: none;
         }
-        
+
         .tier-header:hover {
             background: var(--bg-hover);
         }
-        
+
         .tier-header-left {
             display: flex;
             align-items: center;
             gap: var(--spacing-md);
         }
-        
+
         .tier-badge {
             padding: 4px 12px;
             border-radius: 12px;
@@ -975,61 +1033,61 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .tier-badge.tier-1 {
             background: rgba(255, 107, 107, 0.2);
             color: var(--terminal-error);
             border: 1px solid var(--terminal-error);
         }
-        
+
         .tier-badge.tier-2 {
             background: rgba(220, 220, 170, 0.2);
             color: var(--terminal-warning);
             border: 1px solid var(--terminal-warning);
         }
-        
+
         .tier-badge.tier-3 {
             background: rgba(116, 192, 252, 0.2);
             color: var(--terminal-info);
             border: 1px solid var(--terminal-info);
         }
-        
+
         .tier-title {
             color: var(--text-primary);
             font-size: 14px;
             font-weight: 600;
         }
-        
+
         .tier-count {
             color: var(--text-tertiary);
             font-size: 12px;
             margin-left: var(--spacing-sm);
         }
-        
+
         .tier-toggle {
             color: var(--text-tertiary);
             font-size: 14px;
             transition: transform 300ms;
         }
-        
+
         .tier-section.expanded .tier-toggle {
             transform: rotate(180deg);
         }
-        
+
         .tier-content {
             max-height: 0;
             overflow: hidden;
             transition: max-height 300ms cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         .tier-section.expanded .tier-content {
             max-height: 2000px;
         }
-        
+
         .tier-items {
             padding: var(--spacing-md);
         }
-        
+
         .tier-item {
             padding: var(--spacing-md);
             margin-bottom: var(--spacing-sm);
@@ -1038,55 +1096,55 @@
             border-left: 3px solid var(--border-primary);
             font-size: 12px;
         }
-        
+
         .tier-item:last-child {
             margin-bottom: 0;
         }
-        
+
         .tier-item.tier-1 {
             border-left-color: var(--terminal-error);
         }
-        
+
         .tier-item.tier-2 {
             border-left-color: var(--terminal-warning);
         }
-        
+
         .tier-item.tier-3 {
             border-left-color: var(--terminal-info);
         }
-        
+
         .tier-item-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: var(--spacing-xs);
         }
-        
+
         .tier-item-resource {
             color: var(--accent-light);
             font-weight: 600;
             font-size: 13px;
         }
-        
+
         .tier-item-issue {
             color: var(--text-primary);
             margin-bottom: var(--spacing-xs);
             font-size: 12px;
         }
-        
+
         .tier-item-details {
             color: var(--text-tertiary);
             font-size: 11px;
             line-height: 1.6;
         }
-        
+
         /* Solution Display Styles */
         .tier-item-solution {
             margin-top: var(--spacing-md);
             border-top: 1px solid var(--border-primary);
             padding-top: var(--spacing-md);
         }
-        
+
         .solution-header {
             display: flex;
             align-items: center;
@@ -1098,53 +1156,54 @@
             margin-bottom: var(--spacing-sm);
             transition: var(--transition);
         }
-        
+
         .solution-header:hover {
             background: var(--bg-hover);
         }
-        
+
         .solution-title {
             color: var(--text-primary);
             font-weight: 600;
             font-size: 12px;
         }
-        
+
         .solution-toggle {
             color: var(--text-tertiary);
             transition: transform 200ms ease;
         }
-        
+
         .solution-header.expanded .solution-toggle {
             transform: rotate(180deg);
         }
-        
+
         .solution-content {
             display: none;
             animation: slideDown 200ms ease;
         }
-        
-        .solution-header.expanded + .solution-content {
+
+        .solution-header.expanded+.solution-content {
             display: block;
         }
-        
+
         @keyframes slideDown {
             from {
                 opacity: 0;
                 transform: translateY(-10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         .solution-metadata {
             display: flex;
             flex-wrap: wrap;
             gap: var(--spacing-sm);
             margin-bottom: var(--spacing-md);
         }
-        
+
         .metadata-badge {
             display: inline-block;
             background: var(--bg-hover);
@@ -1154,31 +1213,31 @@
             font-size: 11px;
             border: 1px solid var(--border-primary);
         }
-        
+
         .metadata-badge.difficulty-easy {
             border-color: #51CF66;
             color: #51CF66;
             background: rgba(81, 207, 102, 0.1);
         }
-        
+
         .metadata-badge.difficulty-medium {
             border-color: var(--terminal-warning);
             color: var(--terminal-warning);
             background: rgba(220, 220, 170, 0.1);
         }
-        
+
         .metadata-badge.difficulty-hard {
             border-color: var(--terminal-error);
             color: var(--terminal-error);
             background: rgba(255, 107, 107, 0.1);
         }
-        
+
         .metadata-badge.automation {
             border-color: var(--accent-light);
             color: var(--accent-light);
             background: rgba(129, 140, 248, 0.1);
         }
-        
+
         .solution-guide {
             background: var(--bg-tertiary);
             padding: var(--spacing-md);
@@ -1189,14 +1248,14 @@
             font-size: 12px;
             line-height: 1.6;
         }
-        
+
         .solution-steps {
             display: flex;
             flex-direction: column;
             gap: var(--spacing-md);
             margin-bottom: var(--spacing-md);
         }
-        
+
         .solution-step {
             display: flex;
             gap: var(--spacing-md);
@@ -1205,7 +1264,7 @@
             border-radius: 4px;
             border-left: 3px solid var(--accent-primary);
         }
-        
+
         .step-number {
             display: flex;
             align-items: center;
@@ -1219,25 +1278,25 @@
             border-radius: 50%;
             flex-shrink: 0;
         }
-        
+
         .step-content {
             flex: 1;
         }
-        
+
         .step-title {
             color: var(--text-primary);
             font-weight: 600;
             font-size: 12px;
             margin-bottom: var(--spacing-xs);
         }
-        
+
         .step-description {
             color: var(--text-secondary);
             font-size: 11px;
             line-height: 1.5;
             margin-bottom: var(--spacing-xs);
         }
-        
+
         .step-action,
         .step-details,
         .step-hint {
@@ -1249,7 +1308,7 @@
             border-left: 2px solid var(--accent-secondary);
             border-radius: 2px;
         }
-        
+
         .solution-prerequisites,
         .solution-verification,
         .solution-warnings {
@@ -1260,27 +1319,27 @@
             color: var(--text-primary);
             font-size: 12px;
         }
-        
+
         .solution-prerequisites strong,
         .solution-verification strong {
             color: var(--text-primary);
             display: block;
             margin-bottom: var(--spacing-sm);
         }
-        
+
         .solution-warnings strong {
             color: var(--terminal-warning);
             display: block;
             margin-bottom: var(--spacing-sm);
         }
-        
+
         .solution-prerequisites ul,
         .solution-verification ol,
         .solution-warnings ul {
             margin-left: var(--spacing-md);
             color: var(--text-secondary);
         }
-        
+
         .solution-prerequisites li,
         .solution-verification li,
         .solution-warnings li {
@@ -1431,104 +1490,128 @@
         }
     </style>
 </head>
+
 <body>
     <div class="app-wrapper">
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <div class="sidebar-branding">
-                    <span class="sidebar-branding-icon">🛡️</span>
+                <div class="sidebar-branding" onclick="window.location.href='/'" style="cursor:pointer;" title="Go to Home">
+                    <span class="sidebar-branding-icon"><img src="/static/logos/astra-logo.png"
+                            style="width:28px;height:28px;object-fit:contain;"></span>
                     <span class="sidebar-branding-text">CloudASTRA</span>
                 </div>
                 <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
-                    <span id="sidebarToggleIcon">☰</span>
+                    <span id="sidebarToggleIcon">
+                        <img src="/static/logos/sidebar.png" alt="Toggle"
+                            style="width:22px;height:22px;object-fit:contain;">
+                    </span>
+                    <span id="collapsedAstraIcon" style="align-items:center;justify-content:center;">
+                        <img src="/static/logos/astra-logo.png" alt="Expand"
+                            style="width:26px;height:26px;object-fit:contain;">
+                    </span>
+
                 </button>
             </div>
             <nav class="sidebar-nav">
-                    <div class="nav-item active" onclick="switchService('s3', this)" title="S3 Security">
-                        <span class="nav-icon"><img src="/static/logos/s3bucket.webp" style="width:20px;height:20px;object-fit:contain;"></span>
-                        <span>S3</span>
-                    </div>
-                    <div class="nav-item" onclick="switchService('ec2', this)" title="EC2 Security">
-                        <span class="nav-icon"><img src="/static/logos/ec2.svg" style="width:20px;height:20px;object-fit:contain;"></span>
-                        <span>EC2</span>
-                    </div>
-                    <div class="nav-item" onclick="switchService('iam', this)" title="IAM Management">
-                        <span class="nav-icon"><img src="/static/logos/IAM.jpeg" style="width:20px;height:20px;object-fit:contain;"></span>
-                        <span>IAM</span>
-                    </div>
-                    <div class="nav-item" onclick="switchService('lambda', this)" title="Lambda Security">
-                        <span class="nav-icon"><img src="/static/logos/lambda.png" style="width:20px;height:20px;object-fit:contain;"></span>
-                        <span>Lambda</span>
-                    </div>
-                </nav>
-                
-                <div class="sidebar-footer" id="terminalToggle" onclick="toggleTerminal()" title="Toggle Terminal">
-                    <span class="sidebar-footer-icon">🖥️</span>
-                    <span>Astra</span>
+                <div class="nav-item active" onclick="switchService('s3', this)" title="S3 Security">
+                    <span class="nav-icon"><img src="/static/logos/s3bucket.webp"
+                            style="width:20px;height:20px;object-fit:contain;"></span>
+                    <span>S3</span>
                 </div>
-                
-                <div class="sidebar-footer" onclick="window.location.href='/about'" title="About CloudAstra">
-                    <span class="sidebar-footer-icon">ℹ️</span>
-                    <span>About</span>
+                <div class="nav-item" onclick="switchService('ec2', this)" title="EC2 Security">
+                    <span class="nav-icon"><img src="/static/logos/ec2.svg"
+                            style="width:20px;height:20px;object-fit:contain;"></span>
+                    <span>EC2</span>
                 </div>
-            </aside>
-            
-            <!-- LEFT PANEL -->
-            <div class="left-panel">
-                <div class="panel-header">
-                    <h2 id="panelTitle"><img src="/static/logos/s3bucket.webp" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> S3 Security Scanner</h2>
+                <div class="nav-item" onclick="switchService('iam', this)" title="IAM Management">
+                    <span class="nav-icon"><img src="/static/logos/IAM.jpeg"
+                            style="width:20px;height:20px;object-fit:contain;"></span>
+                    <span>IAM</span>
                 </div>
-                
-                <div class="panel-content">
-                    <div class="content-wrapper">
-                        <!-- S3 SCREEN -->
-                        <div class="service-screen active" id="s3-screen">
-                            <!-- SETUP GUIDE SECTION -->
-                            <div class="setup-guide-wrapper">
-                                <div class="setup-guide-heading">🔐 Role Creation Steps</div>
-                                
-                                <div class="setup-guide-container">
-                                    <!-- GUI Steps Tab -->
-                                    <div class="setup-guide-column">
-                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
-                                            <div class="setup-tab-header">
-                                                <span class="setup-tab-header-text">📋 GUI Steps</span>
-                                                <span class="setup-tab-toggle">▼</span>
-                                            </div>
-                                            <div class="setup-tab-content">
-                                                <ol class="setup-steps">
-                                                    <li>Open <strong>AWS Management Console</strong> and sign in</li>
-                                                    <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)</li>
-                                                    <li>Click <strong>"Create Role"</strong> button</li>
-                                                    <li>Select <strong>"AWS account"</strong> as the trusted entity type</li>
-                                                    <li>In the "Account ID" field, paste your <strong>12-digit AWS Account ID</strong></li>
-                                                    <li>Check <strong>"Require external ID"</strong> checkbox</li>
-                                                    <li>Enter a secure external ID (e.g., <code>CloudAstra-SecureID-2025</code>)</li>
-                                                    <li>Click <strong>"Next"</strong>, search for and select <strong>"AmazonS3FullAccess"</strong> policy</li>
-                                                    <li>Click <strong>"Next"</strong> and name the role <strong>"CloudAstraRole"</strong></li>
-                                                    <li>Review and click <strong>"Create Role"</strong></li>
-                                                    <li>Copy the <strong>Role ARN</strong> (format: <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraRole</code>)</li>
-                                                    <li>Paste both Role ARN and External ID in the form below</li>
-                                                </ol>
-                                            </div>
+                <div class="nav-item" onclick="switchService('lambda', this)" title="Lambda Security">
+                    <span class="nav-icon"><img src="/static/logos/lambda.png"
+                            style="width:20px;height:20px;object-fit:contain;"></span>
+                    <span>Lambda</span>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer" id="terminalToggle" onclick="toggleTerminal()" title="Toggle Terminal">
+                <span class="sidebar-footer-icon">🖥️</span>
+                <span>Astra</span>
+            </div>
+
+            <div class="sidebar-footer" onclick="window.location.href='/about'" title="About CloudAstra">
+                <span class="sidebar-footer-icon">ℹ️</span>
+                <span>About</span>
+            </div>
+        </aside>
+
+        <!-- LEFT PANEL -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <h2 id="panelTitle"><img src="/static/logos/s3bucket.webp"
+                        style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> S3
+                    Security Scanner</h2>
+            </div>
+
+            <div class="panel-content">
+                <div class="content-wrapper">
+                    <!-- S3 SCREEN -->
+                    <div class="service-screen active" id="s3-screen">
+                        <!-- SETUP GUIDE SECTION -->
+                        <div class="setup-guide-wrapper">
+                            <div class="setup-guide-heading">🔐 Role Creation Steps</div>
+
+                            <div class="setup-guide-container">
+                                <!-- GUI Steps Tab -->
+                                <div class="setup-guide-column">
+                                    <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                        <div class="setup-tab-header">
+                                            <span class="setup-tab-header-text">📋 GUI Steps</span>
+                                            <span class="setup-tab-toggle">▼</span>
+                                        </div>
+                                        <div class="setup-tab-content">
+                                            <ol class="setup-steps">
+                                                <li>Open <strong>AWS Management Console</strong> and sign in</li>
+                                                <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)
+                                                </li>
+                                                <li>Click <strong>"Create Role"</strong> button</li>
+                                                <li>Select <strong>"AWS account"</strong> as the trusted entity type
+                                                </li>
+                                                <li>In the "Account ID" field, paste your <strong>12-digit AWS Account
+                                                        ID</strong></li>
+                                                <li>Check <strong>"Require external ID"</strong> checkbox</li>
+                                                <li>Enter a secure external ID (e.g.,
+                                                    <code>CloudAstra-SecureID-2025</code>)</li>
+                                                <li>Click <strong>"Next"</strong>, search for and select
+                                                    <strong>"AmazonS3FullAccess"</strong> policy</li>
+                                                <li>Click <strong>"Next"</strong> and name the role
+                                                    <strong>"CloudAstraRole"</strong></li>
+                                                <li>Review and click <strong>"Create Role"</strong></li>
+                                                <li>Copy the <strong>Role ARN</strong> (format:
+                                                    <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraRole</code>)</li>
+                                                <li>Paste both Role ARN and External ID in the form below</li>
+                                            </ol>
                                         </div>
                                     </div>
-                                    
-                                    <!-- OR Divider -->
-                                    <div class="setup-or-divider">or</div>
-                                    
-                                    <!-- CLI Commands Tab -->
-                                    <div class="setup-guide-column">
-                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
-                                            <div class="setup-tab-header">
-                                                <span class="setup-tab-header-text">⚙️ CLI Commands</span>
-                                                <span class="setup-tab-toggle">▼</span>
-                                            </div>
-                                            <div class="setup-tab-content">
-                                                <div class="cli-command">
-                                                    <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):</p>
-                                                    <pre class="code-block">{
+                                </div>
+
+                                <!-- OR Divider -->
+                                <div class="setup-or-divider">or</div>
+
+                                <!-- CLI Commands Tab -->
+                                <div class="setup-guide-column">
+                                    <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                        <div class="setup-tab-header">
+                                            <span class="setup-tab-header-text">⚙️ CLI Commands</span>
+                                            <span class="setup-tab-toggle">▼</span>
+                                        </div>
+                                        <div class="setup-tab-content">
+                                            <div class="cli-command">
+                                                <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):
+                                                </p>
+                                                <pre class="code-block">{
   "Version": "2012-10-17",
   "Statement": [
     {
@@ -1545,149 +1628,166 @@
     }
   ]
 }</pre>
-                                                </div>
-                                                
-                                                <div class="cli-command">
-                                                    <p class="cmd-label">2. Create Role (S3 example - S3FullAccess):</p>
-                                                    <pre class="code-block">aws iam create-role --role-name CloudAstraRole \
+                                            </div>
+
+                                            <div class="cli-command">
+                                                <p class="cmd-label">2. Create Role (S3 example - S3FullAccess):</p>
+                                                <pre class="code-block">aws iam create-role --role-name CloudAstraRole \
   --assume-role-policy-document file://trust-policy.json</pre>
-                                                </div>
-                                                
-                                                <div class="cli-command">
-                                                    <p class="cmd-label">3. Attach Policy (S3):</p>
-                                                    <pre class="code-block">aws iam attach-role-policy --role-name CloudAstraRole \
+                                            </div>
+
+                                            <div class="cli-command">
+                                                <p class="cmd-label">3. Attach Policy (S3):</p>
+                                                <pre class="code-block">aws iam attach-role-policy --role-name CloudAstraRole \
   --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess</pre>
-                                                </div>
-                                                
-                                                <div class="setup-notice">
-                                                    <strong>⚠️ Security Note:</strong> For simplicity, we use full service access policies (e.g., AmazonS3FullAccess). For your security/privacy, you can configure <strong>least privilege policies</strong> with only required permissions.
-                                                </div>
+                                            </div>
+
+                                            <div class="setup-notice">
+                                                <strong>⚠️ Security Note:</strong> For simplicity, we use full service
+                                                access policies (e.g., AmazonS3FullAccess). For your security/privacy,
+                                                you can configure <strong>least privilege policies</strong> with only
+                                                required permissions.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <form id="scanForm" onsubmit="submitScan(event)">
-                                <div class="form-wrapper">
-                                    <div class="form-section">
-                                        <h3>🔐 AWS Configuration</h3>
-                                        <div class="form-group">
-                                            <label>IAM Role ARN</label>
-                                            <input type="text" id="roleArn" name="roleArn" placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
-                                            <div class="help-text">IAM role in the target AWS account</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>External ID</label>
-                                            <input type="text" id="externalId" name="externalId" value="my-cloud-astra-role">
-                                            <div class="help-text">Security measure for cross-account access</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>AWS Region</label>
-                                            <select id="region" name="region">
-                                                <option value="us-east-1">US East (N. Virginia)</option>
-                                                <option value="us-west-2">US West (Oregon)</option>
-                                                <option value="eu-west-1">Europe (Ireland)</option>
-                                                <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <h3>🎯 Bucket Intent</h3>
-                                        <div class="form-group">
-                                            <label>Define bucket purposes</label>
-                                            <div id="intentMappings">
-                                                <div class="intent-item">
-                                                    <input type="text" placeholder="Bucket name" name="bucketName[]" style="flex: 1.2;">
-                                                    <select name="bucketIntent[]" style="flex: 1;">
-                                                        <option value="">Auto-detect</option>
-                                                        <option value="website hosting">🌐 Website</option>
-                                                        <option value="data storage">📦 Data</option>
-                                                    </select>
-                                                    <button type="button" class="remove-intent-btn" onclick="removeIntent(this)">✕</button>
-                                                </div>
-                                            </div>
-                                            <button type="button" class="btn btn-secondary" style="margin-top: 8px; padding: 6px 12px;" onclick="addIntentMapping()">+ Add</button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <h3>⚙️ Options</h3>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="allowConversion" name="allowConversion" checked>
-                                            <label for="allowConversion">Allow bucket conversion</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="autoFix" name="autoFix" checked>
-                                            <label for="autoFix">Enable auto-fixes</label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="action-buttons">
-                                        <button type="submit" class="btn btn-primary">🚀 Scan</button>
-                                        <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
-                                    </div>
-                                </div>
-                            </form>
-                            
-                            <div class="loading" id="loading">
-                                <div class="spinner"></div>
-                                <p>Scanning S3 buckets...</p>
-                            </div>
-                            
-                            <div class="results-panel" id="results-panel">
-                                <div id="resultsContent"></div>
                             </div>
                         </div>
-                        
-                        <!-- EC2 SCREEN -->
-                        <div class="service-screen" id="ec2-screen">
-                            <!-- SETUP GUIDE SECTION -->
-                            <div class="setup-guide-wrapper">
-                                <div class="setup-guide-heading">🔐 Role Creation Steps</div>
-                                
-                                <div class="setup-guide-container">
-                                    <!-- GUI Steps Tab -->
-                                    <div class="setup-guide-column">
-                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
-                                            <div class="setup-tab-header">
-                                                <span class="setup-tab-header-text">📋 GUI Steps</span>
-                                                <span class="setup-tab-toggle">▼</span>
-                                            </div>
-                                            <div class="setup-tab-content">
-                                                <ol class="setup-steps">
-                                                    <li>Open <strong>AWS Management Console</strong> and sign in</li>
-                                                    <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)</li>
-                                                    <li>Click <strong>"Create Role"</strong> button</li>
-                                                    <li>Select <strong>"AWS account"</strong> as the trusted entity type</li>
-                                                    <li>In the "Account ID" field, paste your <strong>12-digit AWS Account ID</strong></li>
-                                                    <li>Check <strong>"Require external ID"</strong> checkbox</li>
-                                                    <li>Enter a secure external ID (e.g., <code>CloudAstra-EC2-SecureID-2025</code>)</li>
-                                                    <li>Click <strong>"Next"</strong>, search for and select <strong>"AmazonEC2FullAccess"</strong> policy</li>
-                                                    <li>Click <strong>"Next"</strong> and name the role <strong>"CloudAstraEC2Role"</strong></li>
-                                                    <li>Review and click <strong>"Create Role"</strong></li>
-                                                    <li>Copy the <strong>Role ARN</strong> (format: <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraEC2Role</code>)</li>
-                                                    <li>Paste both Role ARN and External ID in the form below</li>
-                                                </ol>
+
+                        <form id="scanForm" onsubmit="submitScan(event)">
+                            <div class="form-wrapper">
+                                <div class="form-section">
+                                    <h3>🔐 AWS Configuration</h3>
+                                    <div class="form-group">
+                                        <label>IAM Role ARN</label>
+                                        <input type="text" id="roleArn" name="roleArn"
+                                            placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                                        <div class="help-text">IAM role in the target AWS account</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>External ID</label>
+                                        <input type="text" id="externalId" name="externalId"
+                                            value="my-cloud-astra-role">
+                                        <div class="help-text">Security measure for cross-account access</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>AWS Region</label>
+                                        <select id="region" name="region">
+                                            <option value="us-east-1">US East (N. Virginia)</option>
+                                            <option value="us-west-2">US West (Oregon)</option>
+                                            <option value="eu-west-1">Europe (Ireland)</option>
+                                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>🎯 Bucket Intent</h3>
+                                    <div class="form-group">
+                                        <label>Define bucket purposes</label>
+                                        <div id="intentMappings">
+                                            <div class="intent-item">
+                                                <input type="text" placeholder="Bucket name" name="bucketName[]"
+                                                    style="flex: 1.2;">
+                                                <select name="bucketIntent[]" style="flex: 1;">
+                                                    <option value="">Auto-detect</option>
+                                                    <option value="website hosting">🌐 Website</option>
+                                                    <option value="data storage">📦 Data</option>
+                                                </select>
+                                                <button type="button" class="remove-intent-btn"
+                                                    onclick="removeIntent(this)">✕</button>
                                             </div>
                                         </div>
+                                        <button type="button" class="btn btn-secondary"
+                                            style="margin-top: 8px; padding: 6px 12px;" onclick="addIntentMapping()">+
+                                            Add</button>
                                     </div>
-                                    
-                                    <!-- OR Divider -->
-                                    <div class="setup-or-divider">or</div>
-                                    
-                                    <!-- CLI Commands Tab -->
-                                    <div class="setup-guide-column">
-                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
-                                            <div class="setup-tab-header">
-                                                <span class="setup-tab-header-text">⚙️ CLI Commands</span>
-                                                <span class="setup-tab-toggle">▼</span>
-                                            </div>
-                                            <div class="setup-tab-content">
-                                                <div class="cli-command">
-                                                    <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):</p>
-                                                    <pre class="code-block">{
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>⚙️ Options</h3>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="allowConversion" name="allowConversion" checked>
+                                        <label for="allowConversion">Allow bucket conversion</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="autoFix" name="autoFix" checked>
+                                        <label for="autoFix">Enable auto-fixes</label>
+                                    </div>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-primary">🚀 Scan</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="loading" id="loading">
+                            <div class="spinner"></div>
+                            <p>Scanning S3 buckets...</p>
+                        </div>
+
+                        <div class="results-panel" id="results-panel">
+                            <div id="resultsContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- EC2 SCREEN -->
+                    <div class="service-screen" id="ec2-screen">
+                        <!-- SETUP GUIDE SECTION -->
+                        <div class="setup-guide-wrapper">
+                            <div class="setup-guide-heading">🔐 Role Creation Steps</div>
+
+                            <div class="setup-guide-container">
+                                <!-- GUI Steps Tab -->
+                                <div class="setup-guide-column">
+                                    <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                        <div class="setup-tab-header">
+                                            <span class="setup-tab-header-text">📋 GUI Steps</span>
+                                            <span class="setup-tab-toggle">▼</span>
+                                        </div>
+                                        <div class="setup-tab-content">
+                                            <ol class="setup-steps">
+                                                <li>Open <strong>AWS Management Console</strong> and sign in</li>
+                                                <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)
+                                                </li>
+                                                <li>Click <strong>"Create Role"</strong> button</li>
+                                                <li>Select <strong>"AWS account"</strong> as the trusted entity type
+                                                </li>
+                                                <li>In the "Account ID" field, paste your <strong>12-digit AWS Account
+                                                        ID</strong></li>
+                                                <li>Check <strong>"Require external ID"</strong> checkbox</li>
+                                                <li>Enter a secure external ID (e.g.,
+                                                    <code>CloudAstra-EC2-SecureID-2025</code>)</li>
+                                                <li>Click <strong>"Next"</strong>, search for and select
+                                                    <strong>"AmazonEC2FullAccess"</strong> policy</li>
+                                                <li>Click <strong>"Next"</strong> and name the role
+                                                    <strong>"CloudAstraEC2Role"</strong></li>
+                                                <li>Review and click <strong>"Create Role"</strong></li>
+                                                <li>Copy the <strong>Role ARN</strong> (format:
+                                                    <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraEC2Role</code>)</li>
+                                                <li>Paste both Role ARN and External ID in the form below</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- OR Divider -->
+                                <div class="setup-or-divider">or</div>
+
+                                <!-- CLI Commands Tab -->
+                                <div class="setup-guide-column">
+                                    <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                        <div class="setup-tab-header">
+                                            <span class="setup-tab-header-text">⚙️ CLI Commands</span>
+                                            <span class="setup-tab-toggle">▼</span>
+                                        </div>
+                                        <div class="setup-tab-content">
+                                            <div class="cli-command">
+                                                <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):
+                                                </p>
+                                                <pre class="code-block">{
   "Version": "2012-10-17",
   "Statement": [{
     "Effect": "Allow",
@@ -1696,149 +1796,164 @@
     "Condition": {"StringEquals": {"sts:ExternalId": "your-secure-external-id"}}
   }]
 }</pre>
-                                                </div>
-                                                
-                                                <div class="cli-command">
-                                                    <p class="cmd-label">2. Create Role & Attach EC2FullAccess:</p>
-                                                    <pre class="code-block">aws iam create-role --role-name CloudAstraEC2Role \
+                                            </div>
+
+                                            <div class="cli-command">
+                                                <p class="cmd-label">2. Create Role & Attach EC2FullAccess:</p>
+                                                <pre class="code-block">aws iam create-role --role-name CloudAstraEC2Role \
   --assume-role-policy-document file://trust-policy.json
 
 aws iam attach-role-policy --role-name CloudAstraEC2Role \
   --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess</pre>
-                                                </div>
-                                                
-                                                <div class="setup-notice">
-                                                    <strong>⚠️ Security Note:</strong> For production, use least privilege with specific EC2 permissions (e.g., ec2:DescribeInstances, ec2:DescribeSecurityGroups) instead of full access.
-                                                </div>
+                                            </div>
+
+                                            <div class="setup-notice">
+                                                <strong>⚠️ Security Note:</strong> For production, use least privilege
+                                                with specific EC2 permissions (e.g., ec2:DescribeInstances,
+                                                ec2:DescribeSecurityGroups) instead of full access.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <form id="ec2ScanForm" onsubmit="submitScan(event)">
-                                <div class="form-wrapper">
-                                    <div class="form-section">
-                                        <h3>🔐 AWS Configuration</h3>
-                                        <div class="form-group">
-                                            <label>IAM Role ARN</label>
-                                            <input type="text" id="ec2RoleArn" name="ec2RoleArn" placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
-                                            <div class="help-text">IAM role in the target AWS account</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>External ID</label>
-                                            <input type="text" id="ec2ExternalId" name="ec2ExternalId" value="my-cloud-astra-role">
-                                            <div class="help-text">Security measure for cross-account access</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>AWS Region</label>
-                                            <select id="ec2Region" name="ec2Region">
-                                                <option value="us-east-1">US East (N. Virginia)</option>
-                                                <option value="us-west-2">US West (Oregon)</option>
-                                                <option value="eu-west-1">Europe (Ireland)</option>
-                                                <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <h3>🎯 EC2 Filters</h3>
-                                        <div class="form-group">
-                                            <label>Instance IDs (comma-separated)</label>
-                                            <input type="text" id="ec2Instances" name="ec2Instances" placeholder="i-1234567, i-0987654">
-                                            <div class="help-text">Leave empty to scan all instances</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Tag Filter</label>
-                                            <input type="text" id="ec2Tags" name="ec2Tags" placeholder="Environment:production">
-                                            <div class="help-text">Format: Key:Value</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <h3>🔍 Security Checks</h3>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="ec2CheckSecurityGroups" name="ec2CheckSecurityGroups" checked>
-                                            <label for="ec2CheckSecurityGroups">Security Groups</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="ec2CheckEBS" name="ec2CheckEBS" checked>
-                                            <label for="ec2CheckEBS">EBS Encryption</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="ec2CheckBackups" name="ec2CheckBackups" checked>
-                                            <label for="ec2CheckBackups">Backups</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="ec2CheckIMDSv2" name="ec2CheckIMDSv2" checked>
-                                            <label for="ec2CheckIMDSv2">IMDSv2</label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="action-buttons">
-                                        <button type="submit" class="btn btn-primary">🚀 Scan</button>
-                                        <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
-                                    </div>
-                                </div>
-                            </form>
-                            
-                            <div class="loading" id="ec2-loading">
-                                <div class="spinner"></div>
-                                <p>Scanning EC2 instances...</p>
-                            </div>
-                            
-                            <div class="results-panel" id="ec2-results-panel">
-                                <div id="ec2ResultsContent"></div>
                             </div>
                         </div>
-                        
-                        <!-- IAM SCREEN -->
-                        <div class="service-screen" id="iam-screen">
-                            <!-- SETUP GUIDE SECTION -->
-                            <div class="setup-guide-wrapper">
-                                <div class="setup-guide-heading">🔐 Role Creation Steps</div>
-                                
-                                <div class="setup-guide-container">
-                                    <!-- GUI Steps Tab -->
-                                    <div class="setup-guide-column">
-                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
-                                            <div class="setup-tab-header">
-                                                <span class="setup-tab-header-text">📋 GUI Steps</span>
-                                                <span class="setup-tab-toggle">▼</span>
-                                            </div>
-                                            <div class="setup-tab-content">
-                                                <ol class="setup-steps">
-                                                    <li>Open <strong>AWS Management Console</strong> and sign in</li>
-                                                    <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)</li>
-                                                    <li>Click <strong>"Create Role"</strong> button</li>
-                                                    <li>Select <strong>"AWS account"</strong> as the trusted entity type</li>
-                                                    <li>In the "Account ID" field, paste your <strong>12-digit AWS Account ID</strong></li>
-                                                    <li>Check <strong>"Require external ID"</strong> checkbox</li>
-                                                    <li>Enter a secure external ID (e.g., <code>CloudAstra-IAM-SecureID-2025</code>)</li>
-                                                    <li>Click <strong>"Next"</strong>, search for and select <strong>"IAMFullAccess"</strong> policy</li>
-                                                    <li>Click <strong>"Next"</strong> and name the role <strong>"CloudAstraIAMRole"</strong></li>
-                                                    <li>Review and click <strong>"Create Role"</strong></li>
-                                                    <li>Copy the <strong>Role ARN</strong> (format: <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraIAMRole</code>)</li>
-                                                    <li>Paste both Role ARN and External ID in the form below</li>
-                                                </ol>
-                                            </div>
+
+                        <form id="ec2ScanForm" onsubmit="submitScan(event)">
+                            <div class="form-wrapper">
+                                <div class="form-section">
+                                    <h3>🔐 AWS Configuration</h3>
+                                    <div class="form-group">
+                                        <label>IAM Role ARN</label>
+                                        <input type="text" id="ec2RoleArn" name="ec2RoleArn"
+                                            placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                                        <div class="help-text">IAM role in the target AWS account</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>External ID</label>
+                                        <input type="text" id="ec2ExternalId" name="ec2ExternalId"
+                                            value="my-cloud-astra-role">
+                                        <div class="help-text">Security measure for cross-account access</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>AWS Region</label>
+                                        <select id="ec2Region" name="ec2Region">
+                                            <option value="us-east-1">US East (N. Virginia)</option>
+                                            <option value="us-west-2">US West (Oregon)</option>
+                                            <option value="eu-west-1">Europe (Ireland)</option>
+                                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>🎯 EC2 Filters</h3>
+                                    <div class="form-group">
+                                        <label>Instance IDs (comma-separated)</label>
+                                        <input type="text" id="ec2Instances" name="ec2Instances"
+                                            placeholder="i-1234567, i-0987654">
+                                        <div class="help-text">Leave empty to scan all instances</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Tag Filter</label>
+                                        <input type="text" id="ec2Tags" name="ec2Tags"
+                                            placeholder="Environment:production">
+                                        <div class="help-text">Format: Key:Value</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>🔍 Security Checks</h3>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="ec2CheckSecurityGroups" name="ec2CheckSecurityGroups"
+                                            checked>
+                                        <label for="ec2CheckSecurityGroups">Security Groups</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="ec2CheckEBS" name="ec2CheckEBS" checked>
+                                        <label for="ec2CheckEBS">EBS Encryption</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="ec2CheckBackups" name="ec2CheckBackups" checked>
+                                        <label for="ec2CheckBackups">Backups</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="ec2CheckIMDSv2" name="ec2CheckIMDSv2" checked>
+                                        <label for="ec2CheckIMDSv2">IMDSv2</label>
+                                    </div>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-primary">🚀 Scan</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="loading" id="ec2-loading">
+                            <div class="spinner"></div>
+                            <p>Scanning EC2 instances...</p>
+                        </div>
+
+                        <div class="results-panel" id="ec2-results-panel">
+                            <div id="ec2ResultsContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- IAM SCREEN -->
+                    <div class="service-screen" id="iam-screen">
+                        <!-- SETUP GUIDE SECTION -->
+                        <div class="setup-guide-wrapper">
+                            <div class="setup-guide-heading">🔐 Role Creation Steps</div>
+
+                            <div class="setup-guide-container">
+                                <!-- GUI Steps Tab -->
+                                <div class="setup-guide-column">
+                                    <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                        <div class="setup-tab-header">
+                                            <span class="setup-tab-header-text">📋 GUI Steps</span>
+                                            <span class="setup-tab-toggle">▼</span>
+                                        </div>
+                                        <div class="setup-tab-content">
+                                            <ol class="setup-steps">
+                                                <li>Open <strong>AWS Management Console</strong> and sign in</li>
+                                                <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)
+                                                </li>
+                                                <li>Click <strong>"Create Role"</strong> button</li>
+                                                <li>Select <strong>"AWS account"</strong> as the trusted entity type
+                                                </li>
+                                                <li>In the "Account ID" field, paste your <strong>12-digit AWS Account
+                                                        ID</strong></li>
+                                                <li>Check <strong>"Require external ID"</strong> checkbox</li>
+                                                <li>Enter a secure external ID (e.g.,
+                                                    <code>CloudAstra-IAM-SecureID-2025</code>)</li>
+                                                <li>Click <strong>"Next"</strong>, search for and select
+                                                    <strong>"IAMFullAccess"</strong> policy</li>
+                                                <li>Click <strong>"Next"</strong> and name the role
+                                                    <strong>"CloudAstraIAMRole"</strong></li>
+                                                <li>Review and click <strong>"Create Role"</strong></li>
+                                                <li>Copy the <strong>Role ARN</strong> (format:
+                                                    <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraIAMRole</code>)</li>
+                                                <li>Paste both Role ARN and External ID in the form below</li>
+                                            </ol>
                                         </div>
                                     </div>
-                                    
-                                    <!-- OR Divider -->
-                                    <div class="setup-or-divider">or</div>
-                                    
-                                    <!-- CLI Commands Tab -->
-                                    <div class="setup-guide-column">
-                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
-                                            <div class="setup-tab-header">
-                                                <span class="setup-tab-header-text">⚙️ CLI Commands</span>
-                                                <span class="setup-tab-toggle">▼</span>
-                                            </div>
-                                            <div class="setup-tab-content">
-                                                <div class="cli-command">
-                                                    <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):</p>
-                                                    <pre class="code-block">{
+                                </div>
+
+                                <!-- OR Divider -->
+                                <div class="setup-or-divider">or</div>
+
+                                <!-- CLI Commands Tab -->
+                                <div class="setup-guide-column">
+                                    <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                        <div class="setup-tab-header">
+                                            <span class="setup-tab-header-text">⚙️ CLI Commands</span>
+                                            <span class="setup-tab-toggle">▼</span>
+                                        </div>
+                                        <div class="setup-tab-content">
+                                            <div class="cli-command">
+                                                <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):
+                                                </p>
+                                                <pre class="code-block">{
   "Version": "2012-10-17",
   "Statement": [{
     "Effect": "Allow",
@@ -1847,155 +1962,171 @@ aws iam attach-role-policy --role-name CloudAstraEC2Role \
     "Condition": {"StringEquals": {"sts:ExternalId": "your-secure-external-id"}}
   }]
 }</pre>
-                                                </div>
-                                                
-                                                <div class="cli-command">
-                                                    <p class="cmd-label">2. Create Role & Attach IAMFullAccess:</p>
-                                                    <pre class="code-block">aws iam create-role --role-name CloudAstraIAMRole \
+                                            </div>
+
+                                            <div class="cli-command">
+                                                <p class="cmd-label">2. Create Role & Attach IAMFullAccess:</p>
+                                                <pre class="code-block">aws iam create-role --role-name CloudAstraIAMRole \
   --assume-role-policy-document file://trust-policy.json
 
 aws iam attach-role-policy --role-name CloudAstraIAMRole \
   --policy-arn arn:aws:iam::aws:policy/IAMFullAccess</pre>
-                                                </div>
-                                                
-                                                <div class="setup-notice">
-                                                    <strong>⚠️ Security Note:</strong> For production, use least privilege with specific IAM permissions (e.g., iam:GetUser, iam:ListAccessKeys, iam:ListMFADevices) instead of full access.
-                                                </div>
+                                            </div>
+
+                                            <div class="setup-notice">
+                                                <strong>⚠️ Security Note:</strong> For production, use least privilege
+                                                with specific IAM permissions (e.g., iam:GetUser, iam:ListAccessKeys,
+                                                iam:ListMFADevices) instead of full access.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <form id="iamScanForm" onsubmit="submitScan(event)">
-                                <div class="form-wrapper">
-                                    <div class="form-section">
-                                        <h3>🔐 AWS Configuration</h3>
-                                        <div class="form-group">
-                                            <label>IAM Role ARN</label>
-                                            <input type="text" id="iamRoleArn" name="iamRoleArn" placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
-                                            <div class="help-text">IAM role in the target AWS account</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>External ID</label>
-                                            <input type="text" id="iamExternalId" name="iamExternalId" value="my-cloud-astra-role">
-                                            <div class="help-text">Security measure for cross-account access</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>AWS Region</label>
-                                            <select id="iamRegion" name="iamRegion">
-                                                <option value="us-east-1">US East (N. Virginia)</option>
-                                                <option value="us-west-2">US West (Oregon)</option>
-                                                <option value="eu-west-1">Europe (Ireland)</option>
-                                                <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <h3>🎯 Scan Scope</h3>
-                                        <div class="form-group">
-                                            <label>Scope</label>
-                                            <select id="iamScope" name="iamScope">
-                                                <option value="account">Full Account</option>
-                                                <option value="users">Users Only</option>
-                                                <option value="roles">Roles Only</option>
-                                                <option value="policies">Policies Only</option>
-                                            </select>
-                                            <div class="help-text">What to scan in your IAM</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Resource Filter (optional)</label>
-                                            <input type="text" id="iamResourceFilter" name="iamResourceFilter" placeholder="username or role name">
-                                            <div class="help-text">Leave empty to scan all resources in scope</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-section">
-                                        <h3>🔍 Security Checks</h3>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="iamCheckAccessKeys" name="iamCheckAccessKeys" checked>
-                                            <label for="iamCheckAccessKeys">Access Key Rotation</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="iamCheckMFA" name="iamCheckMFA" checked>
-                                            <label for="iamCheckMFA">MFA Enforcement</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="iamCheckInactiveUsers" name="iamCheckInactiveUsers" checked>
-                                            <label for="iamCheckInactiveUsers">Inactive Users</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="iamCheckLeastPrivilege" name="iamCheckLeastPrivilege" checked>
-                                            <label for="iamCheckLeastPrivilege">Least Privilege</label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="action-buttons">
-                                        <button type="submit" class="btn btn-primary">🚀 Scan</button>
-                                        <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
-                                    </div>
-                                </div>
-                            </form>
-                            
-                            <div class="loading" id="iam-loading">
-                                <div class="spinner"></div>
-                                <p>Scanning IAM resources...</p>
-                            </div>
-                            
-                            <div class="results-panel" id="iam-results-panel">
-                                <div id="iamResultsContent"></div>
                             </div>
                         </div>
-                        
-                        <!-- LAMBDA SCREEN -->
-                        <div class="service-screen" id="lambda-screen">
-                            <!-- SETUP GUIDE SECTION -->
-                            <div class="setup-guide-wrapper">
-                                <div class="setup-guide-heading">🔐 Role Creation Steps</div>
-                                
-                                <div class="setup-guide-container">
-                                    <!-- GUI Steps Tab -->
-                                    <div class="setup-guide-column">
-                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
-                                            <div class="setup-tab-header">
-                                                <!-- <span class="setup-tab-header-text">📋 GUI Steps</span> -->
-                                                <span class="setup-tab-header-text">📋 GUI Steps</span>
-                                                <span class="setup-tab-toggle">▼</span>
-                                            </div>
-                                            <div class="setup-tab-content">
-                                                <ol class="setup-steps">
-                                                    <li>Open <strong>AWS Management Console</strong> and sign in</li>
-                                                    <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)</li>
-                                                    <li>Click <strong>"Create Role"</strong> button</li>
-                                                    <li>Select <strong>"AWS account"</strong> as the trusted entity type</li>
-                                                    <li>In the "Account ID" field, paste your <strong>12-digit AWS Account ID</strong></li>
-                                                    <li>Check <strong>"Require external ID"</strong> checkbox</li>
-                                                    <li>Enter a secure external ID (e.g., <code>CloudAstra-Lambda-SecureID-2025</code>)</li>
-                                                    <li>Click <strong>"Next"</strong>, search for and select <strong>"AWSLambda_FullAccess"</strong> policy</li>
-                                                    <li>Click <strong>"Next"</strong> and name the role <strong>"CloudAstraLambdaRole"</strong></li>
-                                                    <li>Review and click <strong>"Create Role"</strong></li>
-                                                    <li>Copy the <strong>Role ARN</strong> (format: <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraLambdaRole</code>)</li>
-                                                    <li>Paste both Role ARN and External ID in the form below</li>
-                                                </ol>
-                                            </div>
+
+                        <form id="iamScanForm" onsubmit="submitScan(event)">
+                            <div class="form-wrapper">
+                                <div class="form-section">
+                                    <h3>🔐 AWS Configuration</h3>
+                                    <div class="form-group">
+                                        <label>IAM Role ARN</label>
+                                        <input type="text" id="iamRoleArn" name="iamRoleArn"
+                                            placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                                        <div class="help-text">IAM role in the target AWS account</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>External ID</label>
+                                        <input type="text" id="iamExternalId" name="iamExternalId"
+                                            value="my-cloud-astra-role">
+                                        <div class="help-text">Security measure for cross-account access</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>AWS Region</label>
+                                        <select id="iamRegion" name="iamRegion">
+                                            <option value="us-east-1">US East (N. Virginia)</option>
+                                            <option value="us-west-2">US West (Oregon)</option>
+                                            <option value="eu-west-1">Europe (Ireland)</option>
+                                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>🎯 Scan Scope</h3>
+                                    <div class="form-group">
+                                        <label>Scope</label>
+                                        <select id="iamScope" name="iamScope">
+                                            <option value="account">Full Account</option>
+                                            <option value="users">Users Only</option>
+                                            <option value="roles">Roles Only</option>
+                                            <option value="policies">Policies Only</option>
+                                        </select>
+                                        <div class="help-text">What to scan in your IAM</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Resource Filter (optional)</label>
+                                        <input type="text" id="iamResourceFilter" name="iamResourceFilter"
+                                            placeholder="username or role name">
+                                        <div class="help-text">Leave empty to scan all resources in scope</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>🔍 Security Checks</h3>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="iamCheckAccessKeys" name="iamCheckAccessKeys"
+                                            checked>
+                                        <label for="iamCheckAccessKeys">Access Key Rotation</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="iamCheckMFA" name="iamCheckMFA" checked>
+                                        <label for="iamCheckMFA">MFA Enforcement</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="iamCheckInactiveUsers" name="iamCheckInactiveUsers"
+                                            checked>
+                                        <label for="iamCheckInactiveUsers">Inactive Users</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="iamCheckLeastPrivilege" name="iamCheckLeastPrivilege"
+                                            checked>
+                                        <label for="iamCheckLeastPrivilege">Least Privilege</label>
+                                    </div>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-primary">🚀 Scan</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="loading" id="iam-loading">
+                            <div class="spinner"></div>
+                            <p>Scanning IAM resources...</p>
+                        </div>
+
+                        <div class="results-panel" id="iam-results-panel">
+                            <div id="iamResultsContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- LAMBDA SCREEN -->
+                    <div class="service-screen" id="lambda-screen">
+                        <!-- SETUP GUIDE SECTION -->
+                        <div class="setup-guide-wrapper">
+                            <div class="setup-guide-heading">🔐 Role Creation Steps</div>
+
+                            <div class="setup-guide-container">
+                                <!-- GUI Steps Tab -->
+                                <div class="setup-guide-column">
+                                    <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                        <div class="setup-tab-header">
+                                            <!-- <span class="setup-tab-header-text">📋 GUI Steps</span> -->
+                                            <span class="setup-tab-header-text">📋 GUI Steps</span>
+                                            <span class="setup-tab-toggle">▼</span>
+                                        </div>
+                                        <div class="setup-tab-content">
+                                            <ol class="setup-steps">
+                                                <li>Open <strong>AWS Management Console</strong> and sign in</li>
+                                                <li>Navigate to <strong>IAM → Roles</strong> (search "IAM" in services)
+                                                </li>
+                                                <li>Click <strong>"Create Role"</strong> button</li>
+                                                <li>Select <strong>"AWS account"</strong> as the trusted entity type
+                                                </li>
+                                                <li>In the "Account ID" field, paste your <strong>12-digit AWS Account
+                                                        ID</strong></li>
+                                                <li>Check <strong>"Require external ID"</strong> checkbox</li>
+                                                <li>Enter a secure external ID (e.g.,
+                                                    <code>CloudAstra-Lambda-SecureID-2025</code>)</li>
+                                                <li>Click <strong>"Next"</strong>, search for and select
+                                                    <strong>"AWSLambda_FullAccess"</strong> policy</li>
+                                                <li>Click <strong>"Next"</strong> and name the role
+                                                    <strong>"CloudAstraLambdaRole"</strong></li>
+                                                <li>Review and click <strong>"Create Role"</strong></li>
+                                                <li>Copy the <strong>Role ARN</strong> (format:
+                                                    <code>arn:aws:iam::ACCOUNT-ID:role/CloudAstraLambdaRole</code>)</li>
+                                                <li>Paste both Role ARN and External ID in the form below</li>
+                                            </ol>
                                         </div>
                                     </div>
-                                    
-                                    <!-- OR Divider -->
-                                    <div class="setup-or-divider">or</div>
-                                    
-                                    <!-- CLI Commands Tab -->
-                                    <div class="setup-guide-column">
-                                        <div class="setup-tab" onclick="this.classList.toggle('expanded')">
-                                            <div class="setup-tab-header">
-                                                <span class="setup-tab-header-text">⚙️ CLI Commands</span>
-                                                <span class="setup-tab-toggle">▼</span>
-                                            </div>
-                                            <div class="setup-tab-content">
-                                                <div class="cli-command">
-                                                    <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):</p>
-                                                    <pre class="code-block">{
+                                </div>
+
+                                <!-- OR Divider -->
+                                <div class="setup-or-divider">or</div>
+
+                                <!-- CLI Commands Tab -->
+                                <div class="setup-guide-column">
+                                    <div class="setup-tab" onclick="this.classList.toggle('expanded')">
+                                        <div class="setup-tab-header">
+                                            <span class="setup-tab-header-text">⚙️ CLI Commands</span>
+                                            <span class="setup-tab-toggle">▼</span>
+                                        </div>
+                                        <div class="setup-tab-content">
+                                            <div class="cli-command">
+                                                <p class="cmd-label">1. Create Trust Policy (save as trust-policy.json):
+                                                </p>
+                                                <pre class="code-block">{
   "Version": "2012-10-17",
   "Statement": [{
     "Effect": "Allow",
@@ -2004,170 +2135,180 @@ aws iam attach-role-policy --role-name CloudAstraIAMRole \
     "Condition": {"StringEquals": {"sts:ExternalId": "your-secure-external-id"}}
   }]
 }</pre>
-                                                </div>
-                                                
-                                                <div class="cli-command">
-                                                    <p class="cmd-label">2. Create Role & Attach Lambda Policy:</p>
-                                                    <pre class="code-block">aws iam create-role --role-name CloudAstraLambdaRole \
+                                            </div>
+
+                                            <div class="cli-command">
+                                                <p class="cmd-label">2. Create Role & Attach Lambda Policy:</p>
+                                                <pre class="code-block">aws iam create-role --role-name CloudAstraLambdaRole \
   --assume-role-policy-document file://trust-policy.json
 
 aws iam attach-role-policy --role-name CloudAstraLambdaRole \
   --policy-arn arn:aws:iam::aws:policy/AWSLambda_FullAccess</pre>
-                                                </div>
-                                                
-                                                <div class="setup-notice">
-                                                    <strong>⚠️ Security Note:</strong> For production, use least privilege with specific Lambda permissions (e.g., lambda:GetFunction, lambda:ListFunctions, logs:DescribeLogGroups) instead of full access.
-                                                </div>
+                                            </div>
+
+                                            <div class="setup-notice">
+                                                <strong>⚠️ Security Note:</strong> For production, use least privilege
+                                                with specific Lambda permissions (e.g., lambda:GetFunction,
+                                                lambda:ListFunctions, logs:DescribeLogGroups) instead of full access.
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <form id="lambdaScanForm" onsubmit="submitScan(event)">
-                                <div class="form-wrapper">
-                                    <div class="form-section">
-                                        <h3>🔐 AWS Configuration</h3>
-                                        <div class="form-group">
-                                            <label>IAM Role ARN</label>
-                                            <input type="text" id="lambdaRoleArn" name="lambdaRoleArn" placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
-                                            <div class="help-text">IAM role in the target AWS account</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>External ID</label>
-                                            <input type="text" id="lambdaExternalId" name="lambdaExternalId" value="my-cloud-astra-role">
-                                            <div class="help-text">Security measure for cross-account access</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>AWS Region</label>
-                                            <select id="lambdaRegion" name="lambdaRegion">
-                                                <option value="us-east-1">US East (N. Virginia)</option>
-                                                <option value="us-west-2">US West (Oregon)</option>
-                                                <option value="eu-west-1">Europe (Ireland)</option>
-                                                <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-                                            </select>
-                                        </div>
+                        </div>
+
+                        <form id="lambdaScanForm" onsubmit="submitScan(event)">
+                            <div class="form-wrapper">
+                                <div class="form-section">
+                                    <h3>🔐 AWS Configuration</h3>
+                                    <div class="form-group">
+                                        <label>IAM Role ARN</label>
+                                        <input type="text" id="lambdaRoleArn" name="lambdaRoleArn"
+                                            placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                                        <div class="help-text">IAM role in the target AWS account</div>
                                     </div>
-                                    
-                                    <div class="form-section">
-                                        <h3>🎯 Lambda Configuration</h3>
-                                        <div class="form-group">
-                                            <label>Function Name (optional)</label>
-                                            <input type="text" id="lambdaFunctionName" name="lambdaFunctionName" placeholder="my-function">
-                                            <div class="help-text">Leave empty to scan all functions in the region</div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Function Use Case (optional)</label>
-                                            <select id="lambdaIntent" name="lambdaIntent">
-                                                <option value="">Auto-detect</option>
-                                                <option value="api-endpoint">🔌 API Endpoint</option>
-                                                <option value="scheduled-task">⏰ Scheduled Task</option>
-                                                <option value="data-processing">📊 Data Processing</option>
-                                                <option value="webhook">🔗 Webhook Handler</option>
-                                            </select>
-                                            <div class="help-text">Helps customize security recommendations</div>
-                                        </div>
+                                    <div class="form-group">
+                                        <label>External ID</label>
+                                        <input type="text" id="lambdaExternalId" name="lambdaExternalId"
+                                            value="my-cloud-astra-role">
+                                        <div class="help-text">Security measure for cross-account access</div>
                                     </div>
-                                    
-                                    <div class="form-section">
-                                        <h3>🔍 Security Checks</h3>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="lambdaCheckTimeout" name="lambdaCheckTimeout" checked>
-                                            <label for="lambdaCheckTimeout">Timeout Configuration</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="lambdaCheckMemory" name="lambdaCheckMemory" checked>
-                                            <label for="lambdaCheckMemory">Memory Allocation</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="lambdaCheckLogging" name="lambdaCheckLogging" checked>
-                                            <label for="lambdaCheckLogging">CloudWatch Logging</label>
-                                        </div>
-                                        <div class="checkbox-group">
-                                            <input type="checkbox" id="lambdaCheckEnvVars" name="lambdaCheckEnvVars" checked>
-                                            <label for="lambdaCheckEnvVars">Environment Variables Encryption</label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="action-buttons">
-                                        <button type="submit" class="btn btn-primary">🚀 Scan</button>
-                                        <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                                    <div class="form-group">
+                                        <label>AWS Region</label>
+                                        <select id="lambdaRegion" name="lambdaRegion">
+                                            <option value="us-east-1">US East (N. Virginia)</option>
+                                            <option value="us-west-2">US West (Oregon)</option>
+                                            <option value="eu-west-1">Europe (Ireland)</option>
+                                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                        </select>
                                     </div>
                                 </div>
-                            </form>
-                            
-                            <div class="loading" id="lambda-loading">
-                                <div class="spinner"></div>
-                                <p>Scanning Lambda functions...</p>
+
+                                <div class="form-section">
+                                    <h3>🎯 Lambda Configuration</h3>
+                                    <div class="form-group">
+                                        <label>Function Name (optional)</label>
+                                        <input type="text" id="lambdaFunctionName" name="lambdaFunctionName"
+                                            placeholder="my-function">
+                                        <div class="help-text">Leave empty to scan all functions in the region</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Function Use Case (optional)</label>
+                                        <select id="lambdaIntent" name="lambdaIntent">
+                                            <option value="">Auto-detect</option>
+                                            <option value="api-endpoint">🔌 API Endpoint</option>
+                                            <option value="scheduled-task">⏰ Scheduled Task</option>
+                                            <option value="data-processing">📊 Data Processing</option>
+                                            <option value="webhook">🔗 Webhook Handler</option>
+                                        </select>
+                                        <div class="help-text">Helps customize security recommendations</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>🔍 Security Checks</h3>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="lambdaCheckTimeout" name="lambdaCheckTimeout"
+                                            checked>
+                                        <label for="lambdaCheckTimeout">Timeout Configuration</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="lambdaCheckMemory" name="lambdaCheckMemory" checked>
+                                        <label for="lambdaCheckMemory">Memory Allocation</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="lambdaCheckLogging" name="lambdaCheckLogging"
+                                            checked>
+                                        <label for="lambdaCheckLogging">CloudWatch Logging</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" id="lambdaCheckEnvVars" name="lambdaCheckEnvVars"
+                                            checked>
+                                        <label for="lambdaCheckEnvVars">Environment Variables Encryption</label>
+                                    </div>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-primary">🚀 Scan</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                                </div>
                             </div>
-                            
-                            <div class="results-panel" id="lambda-results-panel">
-                                <div id="lambdaResultsContent"></div>
-                            </div>
+                        </form>
+
+                        <div class="loading" id="lambda-loading">
+                            <div class="spinner"></div>
+                            <p>Scanning Lambda functions...</p>
                         </div>
-                        
-                        <!-- DASHBOARD SCREEN -->
-                        <div class="service-screen" id="dashboard-screen">
-                            <div class="form-section">
-                                <h3>📊 Dashboard</h3>
-                                <p style="color: #666; font-size: 12px;">Coming soon...</p>
-                            </div>
+
+                        <div class="results-panel" id="lambda-results-panel">
+                            <div id="lambdaResultsContent"></div>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- RIGHT PANEL - TERMINAL -->
-            <div class="right-panel" id="rightPanel">
-                <div class="terminal-header">
-                    <h3>🖥️ Astra</h3>
-                </div>
-                
-                <div class="terminal-container">
-                    <div class="terminal-output" id="terminalOutput">
-                        <div class="terminal-output-line success">>>> Astra Terminal Activated  </div>
-                        <div class="terminal-output-line info">Scanning, detecting, and resolving AWS misconfigurations begins now.</div>
-                        <div class="terminal-output-line info">Type 'help' for CloudASTRA & AWS CLI commands</div>
-                    </div>
-                    
-                    <div class="terminal-prompt">
-                        <input type="text" id="terminalInput" class="terminal-input" placeholder="aws ec2 describe-instances" autocomplete="off">
-                    </div>
-                    
-                    <div class="terminal-actions">
-                        <button class="terminal-btn" onclick="executeCommand()">Execute</button>
-                        <button class="terminal-btn" onclick="clearTerminal()">Clear</button>
+
+                    <!-- DASHBOARD SCREEN -->
+                    <div class="service-screen" id="dashboard-screen">
+                        <div class="form-section">
+                            <h3>📊 Dashboard</h3>
+                            <p style="color: #666; font-size: 12px;">Coming soon...</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- RIGHT PANEL - TERMINAL -->
+        <div class="right-panel" id="rightPanel">
+            <div class="terminal-header">
+                <h3>🖥️ Astra</h3>
+            </div>
+
+            <div class="terminal-container">
+                <div class="terminal-output" id="terminalOutput">
+                    <div class="terminal-output-line success">>>> Astra Terminal Activated </div>
+                    <div class="terminal-output-line info">Scanning, detecting, and resolving AWS
+                        misconfigurations begins now.</div>
+                    <div class="terminal-output-line info">Type 'help' for CloudASTRA & AWS CLI commands</div>
+                </div>
+
+                <div class="terminal-prompt">
+                    <input type="text" id="terminalInput" class="terminal-input"
+                        placeholder="aws ec2 describe-instances" autocomplete="off">
+                </div>
+
+                <div class="terminal-actions">
+                    <button class="terminal-btn" onclick="executeCommand()">Execute</button>
+                    <button class="terminal-btn" onclick="clearTerminal()">Clear</button>
+                </div>
+            </div>
+        </div>
     </div>
-    
+    </div>
+
     <script>
         let currentService = 's3';
         let commandHistory = [];
         let historyIndex = -1;
         let terminalOpen = false;
-        
+
         // Service Navigation
         function switchService(service, element) {
             // Remove active class from all nav items
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            
+
             // If element is provided, add active class; otherwise find the nav item for this service
             if (element) {
                 element.classList.add('active');
             } else {
                 // Find and activate the nav item for this service
-                const serviceIndex = {'s3': 0, 'ec2': 1, 'iam': 2, 'lambda': 3}[service];
+                const serviceIndex = { 's3': 0, 'ec2': 1, 'iam': 2, 'lambda': 3 }[service];
                 if (serviceIndex !== undefined) {
                     document.querySelectorAll('.nav-item')[serviceIndex].classList.add('active');
                 }
             }
-            
+
             document.querySelectorAll('.service-screen').forEach(screen => screen.classList.remove('active'));
             document.getElementById(service + '-screen').classList.add('active');
-            
+
             const titles = {
                 's3': '<img src="/static/logos/s3bucket.webp" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> S3 Security Scanner',
                 'ec2': '<img src="/static/logos/ec2.svg" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> EC2 Security Scanner',
@@ -2178,33 +2319,33 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             const title = titles[service];
             document.getElementById('panelTitle').innerHTML = title;
             currentService = service;
-            
+
             // Update the URL to reflect the current service
-            window.history.replaceState({service: service}, '', `/dashboard?service=${service}`);
-            
+            window.history.replaceState({ service: service }, '', `/dashboard?service=${service}`);
+
             document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
         }
-        
+
         // Sidebar Toggle
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('collapsed');
         }
-        
+
         // Terminal Toggle
         function toggleTerminal() {
             const panel = document.getElementById('rightPanel');
             const toggle = document.getElementById('terminalToggle');
             terminalOpen = !terminalOpen;
-            
+
             panel.classList.toggle('active');
             toggle.classList.toggle('active');
-            
+
             if (terminalOpen) {
                 document.getElementById('terminalInput').focus();
             }
         }
-        
+
         // Form Functions
         function addIntentMapping() {
             const container = document.getElementById('intentMappings');
@@ -2221,13 +2362,13 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             `;
             container.appendChild(item);
         }
-        
+
         function removeIntent(btn) {
             if (document.querySelectorAll('.intent-item').length > 1) {
                 btn.parentElement.remove();
             }
         }
-        
+
         function clearForm() {
             let formId;
             if (currentService === 's3') {
@@ -2239,19 +2380,19 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             } else if (currentService === 'lambda') {
                 formId = 'lambdaScanForm';
             }
-            
+
             if (formId) {
                 document.getElementById(formId).reset();
             }
             document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
         }
-        
+
         async function submitScan(event) {
             event.preventDefault();
-            
+
             const formData = new FormData(event.target);
             let data;
-            
+
             if (currentService === 's3') {
                 data = {
                     agent: 's3',
@@ -2263,10 +2404,10 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                     user_intent_input: {}
                 };
                 console.log('🐛 S3 Payload:', JSON.stringify(data, null, 2));
-                
+
                 const bucketNames = formData.getAll('bucketName[]');
                 const bucketIntents = formData.getAll('bucketIntent[]');
-                
+
                 for (let i = 0; i < bucketNames.length; i++) {
                     if (bucketNames[i].trim() && bucketIntents[i]) {
                         data.user_intent_input[bucketNames[i].trim()] = bucketIntents[i];
@@ -2324,7 +2465,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 };
                 console.log('🐛 Lambda Payload:', JSON.stringify(data, null, 2));
             }
-            
+
             const getLoadingId = () => {
                 if (currentService === 's3') return 'loading';
                 if (currentService === 'ec2') return 'ec2-loading';
@@ -2332,18 +2473,18 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 if (currentService === 'lambda') return 'lambda-loading';
                 return 'loading';
             };
-            
+
             document.getElementById(getLoadingId()).classList.add('active');
-            
+
             console.log('📤 Sending to backend:', JSON.stringify(data, null, 2));
-            
+
             try {
                 const response = await fetch('/api/scan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                
+
                 const result = await response.json();
                 document.getElementById(getLoadingId()).classList.remove('active');
                 displayResults(result);
@@ -2352,10 +2493,10 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 addTerminalOutput(`Error: ${error.message}`, 'error');
             }
         }
-        
+
         function displayResults(result) {
             let resultsPanel, resultsContent;
-            
+
             if (currentService === 's3') {
                 resultsPanel = document.getElementById('results-panel');
                 resultsContent = document.getElementById('resultsContent');
@@ -2369,7 +2510,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 resultsPanel = document.getElementById('lambda-results-panel');
                 resultsContent = document.getElementById('lambdaResultsContent');
             }
-            
+
             if (result.error) {
                 resultsContent.innerHTML = `<div class="result-item error"><h4>❌ Error</h4><p>${result.error}</p></div>`;
             } else {
@@ -2381,23 +2522,23 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                         <p>Manual Review Required: ${result.pending_fixes?.length || 0}</p>
                     </div>
                 `;
-                
+
                 // Get all findings - prefer findings array, fallback to pending_fixes
                 let allFindings = result.findings || result.pending_fixes || [];
-                
+
                 // If findings is not an array, it might be an object, so convert it
                 if (!Array.isArray(allFindings) && typeof allFindings === 'object') {
                     allFindings = Object.values(allFindings).flat();
                 }
-                
+
                 // Deduplicate findings across all tiers
                 function deduplicateFindings(findings) {
                     const uniqueFindings = new Map();
-                    
+
                     findings.forEach(finding => {
                         const resource = (finding.resource || finding.bucket || finding.instance_id || '').toLowerCase();
                         const issue = (finding.issue || finding.description || '').toLowerCase();
-                        
+
                         // Normalize issue text to detect duplicates
                         let normalizedIssue = issue
                             .replace(/s3:\/\//g, '')
@@ -2409,7 +2550,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                             .replace(/lacks/g, '')
                             .replace(/no /g, '')
                             .trim();
-                        
+
                         // Create category-based keys for common issue types
                         let key;
                         if (normalizedIssue.includes('version')) {
@@ -2430,24 +2571,24 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                             // Use normalized issue as key for other cases
                             key = `${resource}:${normalizedIssue}`;
                         }
-                        
+
                         // Only keep first occurrence (deduplication)
                         if (!uniqueFindings.has(key)) {
                             uniqueFindings.set(key, finding);
                         }
                     });
-                    
+
                     return Array.from(uniqueFindings.values());
                 }
-                
+
                 // Deduplicate before grouping by tier
                 allFindings = deduplicateFindings(allFindings);
-                
+
                 // Group findings by tier
                 const tier1 = [];
                 const tier2 = [];
                 const tier3 = [];
-                
+
                 if (allFindings && allFindings.length > 0) {
                     allFindings.forEach(finding => {
                         // Determine tier - prioritize explicit tier, then source, then default to 1 for rule-based findings
@@ -2479,7 +2620,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                                 tier = 3;
                             }
                         }
-                        
+
                         if (tier === 1) {
                             tier1.push(finding);
                         } else if (tier === 2) {
@@ -2489,7 +2630,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                         }
                     });
                 }
-                
+
                 // Display Tier 1 (Critical/High)
                 if (tier1.length > 0) {
                     html += `
@@ -2598,7 +2739,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                         </div>
                     `;
                 }
-                
+
                 // Display Tier 2 (Medium)
                 if (tier2.length > 0) {
                     html += `
@@ -2697,7 +2838,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                         </div>
                     `;
                 }
-                
+
                 // Display Tier 3 (Low/Info)
                 if (tier3.length > 0) {
                     html += `
@@ -2781,7 +2922,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                         </div>
                     `;
                 }
-                
+
                 // Show message if no issues found
                 if (tier1.length === 0 && tier2.length === 0 && tier3.length === 0 && result.findings_count === 0) {
                     html += `
@@ -2791,18 +2932,18 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                         </div>
                     `;
                 }
-                
+
                 resultsContent.innerHTML = html;
             }
-            
+
             resultsPanel.classList.add('active');
         }
-        
+
         function toggleTier(event, element) {
             event.stopPropagation();
             element.classList.toggle('expanded');
         }
-        
+
         function toggleSolution(event, element) {
             event.stopPropagation();
             element.classList.toggle('expanded');
@@ -2922,21 +3063,21 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             output.appendChild(line);
             output.scrollTop = output.scrollHeight;
         }
-        
+
         function clearTerminal() {
             document.getElementById('terminalOutput').innerHTML = '';
             document.getElementById('terminalInput').value = '';
         }
-        
+
         async function executeCommand() {
             const input = document.getElementById('terminalInput');
             const command = input.value.trim();
-            
+
             if (!command) return;
-            
+
             addTerminalOutput(`$ ${command}`, 'info');
             input.value = '';
-            
+
             // Handle custom Astra commands
             if (command.toLowerCase() === 'help') {
                 addTerminalOutput('', 'info');
@@ -2958,11 +3099,11 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 addTerminalOutput('', 'info');
                 return;
             }
-            
+
             // Handle astra creds command
             if (command.toLowerCase() === 'astra creds') {
                 let roleArn = '', externalId = '', region = '';
-                
+
                 if (currentService === 's3') {
                     roleArn = document.getElementById('roleArn').value || 'Not configured';
                     externalId = document.getElementById('externalId').value || 'default';
@@ -2980,7 +3121,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                     externalId = document.getElementById('lambdaExternalId').value || 'default';
                     region = document.getElementById('lambdaRegion').value || 'us-east-1';
                 }
-                
+
                 addTerminalOutput('', 'info');
                 addTerminalOutput('┌─ AWS Credentials ─────────────────────────────┐', 'success');
                 addTerminalOutput(`     ARN:        ${roleArn.substring(0, 35).padEnd(35)}`, 'success');
@@ -2990,13 +3131,13 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 addTerminalOutput('', 'info');
                 return;
             }
-            
+
             // Handle clear command
             if (command.toLowerCase() === 'clear') {
                 clearTerminal();
                 return;
             }
-            
+
             // Handle astra unfold command
             if (command.toLowerCase() === 'astra unfold') {
                 addTerminalOutput('', 'info');
@@ -3028,17 +3169,17 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 addTerminalOutput('', 'info');
                 return;
             }
-            
+
             // Handle astra logs command
             if (command.toLowerCase() === 'astra logs') {
                 addTerminalOutput('', 'info');
                 addTerminalOutput('📋 Scanning History & Issues Resolved', 'success');
                 addTerminalOutput('─────────────────────────────────────', 'success');
                 addTerminalOutput('', 'info');
-                
+
                 // Check if there's any history in sessionStorage
                 const scanHistory = JSON.parse(sessionStorage.getItem('astraScanHistory') || '[]');
-                
+
                 if (scanHistory.length === 0) {
                     addTerminalOutput('No history found. Start scanning to build your history!', 'warning');
                 } else {
@@ -3052,7 +3193,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 addTerminalOutput('', 'info');
                 return;
             }
-            
+
             // Handle astra exit command
             if (command.toLowerCase() === 'astra exit') {
                 addTerminalOutput('', 'info');
@@ -3062,20 +3203,20 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 }, 500);
                 return;
             }
-            
+
             // Handle unknown astra commands
             if (command.toLowerCase().startsWith('astra ')) {
                 addTerminalOutput(`Unknown command: ${command}`, 'error');
                 addTerminalOutput('Type "help" for available commands', 'warning');
                 return;
             }
-            
+
             if (!command.toLowerCase().startsWith('aws')) {
                 addTerminalOutput('Only AWS CLI and "astra" commands are supported', 'error');
                 addTerminalOutput('Type "help" for available commands', 'warning');
                 return;
             }
-            
+
             try {
                 let roleArn, externalId, region;
                 if (currentService === 's3') {
@@ -3095,13 +3236,13 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                     externalId = document.getElementById('lambdaExternalId').value;
                     region = document.getElementById('lambdaRegion').value;
                 }
-                
+
                 const response = await fetch('/api/terminal/execute', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ command, role_arn: roleArn, external_id: externalId, region })
                 });
-                
+
                 const result = await response.json();
                 if (result.stdout) addTerminalOutput(result.stdout, 'success');
                 if (result.stderr) addTerminalOutput(result.stderr, 'warning');
@@ -3110,16 +3251,16 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                 addTerminalOutput(`Error: ${error.message}`, 'error');
             }
         }
-        
+
         // Enter key for terminal
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const input = document.getElementById('terminalInput');
             if (input) {
-                input.addEventListener('keydown', function(e) {
+                input.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') executeCommand();
                 });
             }
-            
+
             // Check if landing page passed a service parameter
             const urlParams = new URLSearchParams(window.location.search);
             const serviceParam = urlParams.get('service');
@@ -3129,4 +3270,5 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
         });
     </script>
 </body>
+
 </html>
