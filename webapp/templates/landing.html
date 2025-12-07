@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" type="image/png" href="/static/logos/astra-icon-main.png">
     <title>Cloud Astra</title>
     <style>
         :root{
@@ -22,7 +23,7 @@
         /* HERO */
         .hero{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:8px}
         .hero-logo{animation:float 3s ease-in-out infinite;filter:drop-shadow(0 4px 12px rgba(99,102,241,0.3))}
-        .hero-logo img{display:block;width:120px;height:120px;object-fit:contain;border-radius:50%;background:#FAFAFA;padding:10px}
+        .hero-logo img{display:block;width:180px;height:180px;object-fit:contain;border-radius:50%;background:#FAFAFA;padding:10px}
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
         .hero-title{font-weight:700;font-size:40px;background:linear-gradient(135deg,var(--accent1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
         .hero-sub{color:var(--muted);font-size:14px}
@@ -57,11 +58,11 @@
             will-change:transform,opacity,filter;
         }
 
-        .card-inner{width:100%;height:100%;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;backdrop-filter: blur(4px);transition:transform 650ms cubic-bezier(.2,.9,.25,1)}
+        .card-inner{width:100%;height:100%;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:10px;backdrop-filter: blur(4px);transition:transform 650ms cubic-bezier(.2,.9,.25,1)}
 
         .card .icon{font-size:50px;margin-top:6px;margin-bottom:8px;transition:transform 650ms}
-        .card .title{font-size:14px;font-weight:700;margin-bottom:6px;color:var(--muted);transition:transform 650ms}
-        .card .desc{font-size:10px;color:#bdbdbd;line-height:1.5;padding:0 4px}
+        .card .title{font-size:14px;font-weight:700;margin-bottom:6px;padding-bottom:4px;padding-top:2px; color:var(--muted);transition:transform 650ms}
+        .card .desc{font-size:11px;color:#bdbdbd;line-height:1.5;padding:0 2px}
 
         /* Visible positions: left, center, right */
         .pos0{ /* center */
@@ -73,6 +74,9 @@
             background:linear-gradient(180deg,#4F46E5,#6366F1 50%,#818CF8);
             box-shadow: 0 30px 80px rgba(99,102,241,0.35), 0 8px 30px rgba(0,0,0,0.5);
         }
+        .pos0 .icon{margin-top:0px;margin-bottom:10px;}
+        .pos0 .title{font-size:18px;}
+        .pos0 .desc{font-size:13px;padding:0 4px;}
         .pos--1{ /* left */
             z-index:35;
             opacity:0.95;
@@ -123,7 +127,7 @@
 <body>
     <div class="landing-wrapper">
         <div class="hero">
-            <div class="hero-logo"><img src="/static/logos/astra-icon-main.png" alt="CloudASTRA Logo"></div>
+            <div class="hero-logo"><img src="/static/logos/astra-logo.png" alt="CloudASTRA Logo"></div>
             <div class="hero-title">CloudASTRA</div>
             <div class="hero-sub">Intent-Aware AWS Resolution Assistance</div>
         </div>
