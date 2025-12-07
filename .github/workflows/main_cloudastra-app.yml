@@ -55,11 +55,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python-app
-
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
-
       
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A5296629A3684C21939118FDCE1B261B }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_61F94795A5144649A219CF9F45B6AB92 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_37EA5BEC285A4666AB1CFE7397548280 }}
+
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
