@@ -18,6 +18,7 @@ sentence-transformers==3.2.0  # For embedding-based doc search
 Flask==3.0.0            # Web framework for UI
 python-dotenv>=1.0.0    # Load environment variables from .env file
 requests==2.31.0        # HTTP library for testing API
+gunicorn==21.2.0        # Production WSGI server for Azure
 
 # Testing & Dev
 pytest==8.3.3           # Testing framework
