@@ -24,6 +24,11 @@ def landing():
     """Serve the landing page."""
     return render_template('landing.html')
 
+@app.route('/about')
+def about():
+    """Serve the about page."""
+    return render_template('about.html')
+
 @app.route('/dashboard')
 def dashboard():
     """Serve the main dashboard interface."""
