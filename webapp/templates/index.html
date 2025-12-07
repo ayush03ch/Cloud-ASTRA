@@ -1432,7 +1432,7 @@
                                         </div>
                                         <div class="form-group">
                                             <label>External ID</label>
-                                            <input type="text" id="externalId" name="externalId" value="my-s3-agent-2025">
+                                            <input type="text" id="externalId" name="externalId" value="my-cloud-astra-role">
                                             <div class="help-text">Security measure for cross-account access</div>
                                         </div>
                                         <div class="form-group">
@@ -1580,7 +1580,7 @@ aws iam attach-role-policy --role-name CloudAstraEC2Role \
                                         </div>
                                         <div class="form-group">
                                             <label>External ID</label>
-                                            <input type="text" id="ec2ExternalId" name="ec2ExternalId" value="my-ec2-agent-2025">
+                                            <input type="text" id="ec2ExternalId" name="ec2ExternalId" value="my-cloud-astra-role">
                                             <div class="help-text">Security measure for cross-account access</div>
                                         </div>
                                         <div class="form-group">
@@ -1731,7 +1731,7 @@ aws iam attach-role-policy --role-name CloudAstraIAMRole \
                                         </div>
                                         <div class="form-group">
                                             <label>External ID</label>
-                                            <input type="text" id="iamExternalId" name="iamExternalId" value="my-iam-agent-2025">
+                                            <input type="text" id="iamExternalId" name="iamExternalId" value="my-cloud-astra-role">
                                             <div class="help-text">Security measure for cross-account access</div>
                                         </div>
                                         <div class="form-group">
@@ -1888,7 +1888,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                                         </div>
                                         <div class="form-group">
                                             <label>External ID</label>
-                                            <input type="text" id="lambdaExternalId" name="lambdaExternalId" value="my-lambda-agent-2025">
+                                            <input type="text" id="lambdaExternalId" name="lambdaExternalId" value="my-cloud-astra-role">
                                             <div class="help-text">Security measure for cross-account access</div>
                                         </div>
                                         <div class="form-group">
@@ -2004,8 +2004,19 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
         
         // Service Navigation
         function switchService(service, element) {
+            // Remove active class from all nav items
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            element.classList.add('active');
+            
+            // If element is provided, add active class; otherwise find the nav item for this service
+            if (element) {
+                element.classList.add('active');
+            } else {
+                // Find and activate the nav item for this service
+                const serviceIndex = {'s3': 0, 'ec2': 1, 'iam': 2, 'lambda': 3}[service];
+                if (serviceIndex !== undefined) {
+                    document.querySelectorAll('.nav-item')[serviceIndex].classList.add('active');
+                }
+            }
             
             document.querySelectorAll('.service-screen').forEach(screen => screen.classList.remove('active'));
             document.getElementById(service + '-screen').classList.add('active');
@@ -2020,6 +2031,9 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             const title = titles[service];
             document.getElementById('panelTitle').innerHTML = title;
             currentService = service;
+            
+            // Update the URL to reflect the current service
+            window.history.replaceState({service: service}, '', `/dashboard?service=${service}`);
             
             document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
         }
@@ -2101,6 +2115,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                     auto_fix: formData.get('autoFix') === 'on',
                     user_intent_input: {}
                 };
+                console.log('🐛 S3 Payload:', JSON.stringify(data, null, 2));
                 
                 const bucketNames = formData.getAll('bucketName[]');
                 const bucketIntents = formData.getAll('bucketIntent[]');
@@ -2126,6 +2141,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                         imdsv2: formData.get('ec2CheckIMDSv2') === 'on'
                     }
                 };
+                console.log('🐛 EC2 Payload:', JSON.stringify(data, null, 2));
             } else if (currentService === 'iam') {
                 data = {
                     agent: 'iam',
@@ -2142,6 +2158,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                         least_privilege: formData.get('iamCheckLeastPrivilege') === 'on'
                     }
                 };
+                console.log('🐛 IAM Payload:', JSON.stringify(data, null, 2));
             } else if (currentService === 'lambda') {
                 data = {
                     agent: 'lambda',
@@ -2158,6 +2175,7 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
                         env_vars: formData.get('lambdaCheckEnvVars') === 'on'
                     }
                 };
+                console.log('🐛 Lambda Payload:', JSON.stringify(data, null, 2));
             }
             
             const getLoadingId = () => {
@@ -2169,6 +2187,8 @@ aws iam attach-role-policy --role-name CloudAstraLambdaRole \
             };
             
             document.getElementById(getLoadingId()).classList.add('active');
+            
+            console.log('📤 Sending to backend:', JSON.stringify(data, null, 2));
             
             try {
                 const response = await fetch('/api/scan', {

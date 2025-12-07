@@ -167,12 +167,8 @@
                 </div>
             `;
             el.addEventListener('click', () => {
-                if (el.classList.contains('pos0')) {
-                    window.location.href = `/dashboard?service=${service.id}`;
-                } else {
-                    const clickedIdx = Number(el.dataset.index);
-                    jumpToIndex(clickedIdx);
-                }
+                // Navigate directly to the service dashboard
+                window.location.href = `/dashboard?service=${service.id}`;
             });
             return el;
         }

@@ -69,7 +69,7 @@ def api_scan():
         # Extract common parameters
         agent = data.get('agent', 's3')  # Default to S3 for backward compatibility
         role_arn = data.get('role_arn')
-        external_id = data.get('external_id', 'default-external-id')
+        external_id = data.get('external_id', 'my-cloud-astra-role')
         region = data.get('region', 'us-east-1')
         auto_fix = data.get('auto_fix', True)
         detailed_logging = data.get('detailed_logging', False)
@@ -80,7 +80,7 @@ def api_scan():
             account_id = data.get('account_id')
             if account_id:
                 role_arn = f'arn:aws:iam::{account_id}:role/SecurityAgentRole'
-                external_id = 'unique-external-id-12345'
+                external_id = 'my-cloud-astra-role'
                 app.logger.info(f"🐛 DEBUG: Using simplified format with role_arn: {role_arn}")
             else:
                 return jsonify({"error": "role_arn or account_id is required"}), 400
@@ -485,7 +485,7 @@ def api_terminal_execute():
         
         command = data.get('command', '').strip()
         role_arn = data.get('role_arn')
-        external_id = data.get('external_id', 'default-external-id')
+        external_id = data.get('external_id', 'my-cloud-astra-role')
         region = data.get('region', 'us-east-1')
         
         # Validate command

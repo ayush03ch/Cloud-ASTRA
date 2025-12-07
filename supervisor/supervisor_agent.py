@@ -176,7 +176,7 @@ def assume_and_scan():
     Expected JSON input:
     {
         "role_arn": "arn:aws:iam::123456789012:role/TargetRole",
-        "external_id": "my-s3-agent-2025",
+        "external_id": "my-cloud-astra-role",
         "region": "us-east-1"
     }
     """

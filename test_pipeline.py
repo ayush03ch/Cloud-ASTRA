@@ -4,7 +4,7 @@ from supervisor.supervisor_agent import SupervisorAgent
 if __name__ == "__main__":
     # Replace with your actual IAM role for cross-account / least-priv access
     role_arn = "arn:aws:iam::867344463195:role/S3AgentRole"
-    external_id = "my-s3-agent-2025"
+    external_id = "my-cloud-astra-role"
     region = "us-east-1"
 
     # Initialize supervisor
