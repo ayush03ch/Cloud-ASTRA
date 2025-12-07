@@ -9,6 +9,14 @@ class IAMExecutor:
         """
         normalized = []
         for f in findings:
+            # Handle different finding formats from different tiers
+            # Rules have 'issue', RAG has 'title', LLM has 'issue'
+            issue = f.get("issue") or f.get("title") or f.get("description") or "Unknown issue"
+            
+            # Skip findings without required fields
+            if not f.get("resource"):
+                continue
+            
             # Use existing fix action if provided, otherwise create default
             fix_action = f.get("fix")
             if not fix_action:
@@ -18,7 +26,7 @@ class IAMExecutor:
                 "service": f.get("service", "iam"),
                 "resource": f["resource"],
                 "resource_type": f.get("resource_type", "user"),
-                "issue": f["issue"],
+                "issue": issue,
                 "fix": fix_action,
                 "auto_safe": f.get("auto_safe", False),
                 "note": f.get("note", None),
@@ -29,7 +37,11 @@ class IAMExecutor:
                 "intent_reasoning": f.get("intent_reasoning"),
                 "fix_instructions": f.get("fix_instructions"),
                 "can_auto_fix": f.get("can_auto_fix"),
-                "fix_type": f.get("fix_type")
+                "fix_type": f.get("fix_type"),
+                "source": f.get("source"),
+                "tier": f.get("tier"),
+                "severity": f.get("severity"),
+                "description": f.get("description")
             })
         return normalized
     
