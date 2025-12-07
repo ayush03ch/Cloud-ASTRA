@@ -84,6 +84,28 @@ class LambdaAgent:
         
         return rules
 
+    def scan(self, user_intent_input=None, scope="all"):
+        """Scan Lambda function(s) for security issues - wrapper for analyze().
+        
+        Args:
+            user_intent_input: Dict mapping function names to their intents
+            scope: Either "all" or specific function name to scan
+            
+        Returns:
+            List of formatted findings ready for FixerAgent
+        """
+        # Determine function name from scope
+        function_name = None if scope == "all" else scope
+        
+        # Run analysis
+        findings = self.analyze(
+            function_name=function_name,
+            user_intent_input=user_intent_input
+        )
+        
+        # Format findings for FixerAgent
+        return self.executor.format_for_fixer(findings)
+
     def analyze(self, function_name=None, region=None, user_intent_input=None):
         """Analyze Lambda function(s) for security issues using 3-tier detection.
         
