@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - CloudASTRA-app
+name: Build and deploy Python app to Azure Web App - cloudastra-app
 
 on:
   push:
@@ -63,14 +63,14 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_10A2694FD8BF483B9589D18FF37DDF4B }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9C7A24EAD4F6453DB76DEB96DD61E376 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7672DE24CE7D40CC8E1E9AA566094375 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A5296629A3684C21939118FDCE1B261B }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_61F94795A5144649A219CF9F45B6AB92 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_37EA5BEC285A4666AB1CFE7397548280 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'CloudASTRA-app'
+          app-name: 'cloudastra-app'
           slot-name: 'Production'
           
