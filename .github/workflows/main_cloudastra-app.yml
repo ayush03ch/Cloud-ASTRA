@@ -34,17 +34,10 @@ jobs:
           cp -r fixer_agent ./package/
           cp -r supervisor ./package/
           cp -r webapp ./package/
-          # Create a simple Python launcher
-          cat > ./package/app.py << 'EOF'
-          import sys
-          import os
-          # Add current directory to Python path
-          sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-          # Import the Flask app
-          from webapp.app import app
-          if __name__ == "__main__":
-              app.run(host='0.0.0.0', port=8000)
-          EOF
+          # Copy webapp/app.py to root as wsgi.py for Azure
+          cp webapp/app.py ./package/wsgi.py
+          # Add __init__.py files to make imports work
+          touch ./package/__init__.py
           
       - name: Create deployment artifact
         run: |
