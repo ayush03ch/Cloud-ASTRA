@@ -2,6 +2,7 @@
 """
 WSGI Entry Point for Azure App Service
 This file is placed at the root of the deployment package
+Production deployment - includes all required dependencies
 """
 import sys
 import os
