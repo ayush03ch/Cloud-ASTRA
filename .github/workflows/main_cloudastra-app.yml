@@ -34,8 +34,17 @@ jobs:
           cp -r fixer_agent ./package/
           cp -r supervisor ./package/
           cp -r webapp ./package/
-          cp startup.sh ./package/
-          # Do NOT copy runtime.txt or requirements files - triggers Oryx
+          # Create a simple Python launcher
+          cat > ./package/app.py << 'EOF'
+          import sys
+          import os
+          # Add current directory to Python path
+          sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+          # Import the Flask app
+          from webapp.app import app
+          if __name__ == "__main__":
+              app.run(host='0.0.0.0', port=8000)
+          EOF
           
       - name: Create deployment artifact
         run: |
