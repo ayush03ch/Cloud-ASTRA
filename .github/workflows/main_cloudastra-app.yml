@@ -34,9 +34,9 @@ jobs:
           cp -r fixer_agent ./package/
           cp -r supervisor ./package/
           cp -r webapp ./package/
-          # Copy webapp/app.py to root as wsgi.py for Azure
-          cp webapp/app.py ./package/wsgi.py
-          # Add __init__.py files to make imports work
+          # Copy wsgi.py entry point to root
+          cp wsgi.py ./package/
+          # Add __init__.py to make package recognizable
           touch ./package/__init__.py
           
       - name: Create deployment artifact
