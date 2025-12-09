@@ -35,12 +35,13 @@ jobs:
           cp -r supervisor ./package/
           cp -r webapp ./package/
           cp startup.sh ./package/
-          cp runtime.txt ./package/
+          # Do NOT copy runtime.txt or requirements files - triggers Oryx
           
       - name: Create deployment artifact
         run: |
           cd package
-          zip -r ../app.zip . -x '*.pyc' -x '*__pycache__*'
+          # Exclude files that trigger Oryx build detection
+          zip -r ../app.zip . -x '*.pyc' -x '*__pycache__*' -x 'requirements*.txt' -x 'runtime.txt'
           
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
