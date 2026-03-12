@@ -1,0 +1,41 @@
+# Route53 DNSSEC Best Practices
+
+## Overview
+DNSSEC (Domain Name System Security Extensions) adds cryptographic signatures to DNS records to prevent DNS spoofing and cache poisoning attacks.
+
+## Security Benefits
+- Prevents DNS cache poisoning
+- Ensures DNS query authenticity
+- Protects against man-in-the-middle attacks
+- Validates DNS response integrity
+
+## Implementation Steps
+1. Enable DNSSEC signing in Route53
+2. Route53 automatically creates KSK and ZSK keys
+3. Add DS record to parent zone (domain registrar)
+4. Monitor DNSSEC validation status
+5. Plan for key rotation
+
+## Key Management
+- Route53 manages KSK (Key Signing Key) automatically
+- ZSK (Zone Signing Key) rotated automatically
+- KSK requires manual DS record update at registrar
+- Monitor key expiration dates
+
+## Limitations
+- Only available for public hosted zones
+- Requires registrar support
+- Can impact DNS query performance slightly
+- Misconfiguration can break DNS resolution
+
+## Monitoring
+- Use Route53 DNSSEC status API
+- Monitor CloudWatch metrics for validation failures
+- Set up alarms for key rotation events
+- Test DNSSEC validation regularly
+
+## Troubleshooting
+- Verify DS record at registrar matches Route53 KSK
+- Check DNSSEC validation status in Route53 console
+- Use dig +dnssec command to test validation
+- Allow 24-48 hours for DNS propagation

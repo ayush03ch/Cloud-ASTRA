@@ -1,0 +1,51 @@
+# Route53 Query Logging Guide
+
+## Overview
+Query logging captures information about DNS queries received by Route53, providing visibility into DNS traffic patterns and potential security threats.
+
+## Logged Information
+- Query timestamp
+- Hosted zone ID
+- Query name (domain)
+- Query type (A, AAAA, MX, etc.)
+- Response code
+- Query source (IP address)
+- Edge location
+
+## Security Use Cases
+- Detect DNS tunneling attempts
+- Identify DDoS attack patterns
+- Monitor for suspicious query patterns
+- Track unauthorized domain enumeration
+- Audit DNS resolution for compliance
+
+## Setup Requirements
+- CloudWatch Logs log group in us-east-1
+- Appropriate IAM permissions
+- Log retention policy configuration
+- Optionally: Lambda for log processing
+
+## Cost Considerations
+- CloudWatch Logs data ingestion charges
+- Log storage costs based on retention
+- High-traffic zones can generate significant logs
+- Consider log filtering and sampling
+
+## Analysis Techniques
+- Use CloudWatch Insights for querying
+- Create metrics filters for anomaly detection
+- Export to S3 for long-term analysis
+- Integrate with SIEM tools
+
+## Best Practices
+- Enable for public-facing zones
+- Set appropriate retention period (30-90 days)
+- Create CloudWatch alarms for anomalies
+- Regularly review query patterns
+- Consider privacy implications of logging
+
+## Common Patterns to Monitor
+- High query rate from single source (DDoS)
+- Queries for non-existent subdomains (enumeration)
+- Unusual query types (DNS tunneling)
+- Geographic anomalies in query sources

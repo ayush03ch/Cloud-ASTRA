@@ -1,0 +1,61 @@
+# Route53 Health Checks Setup Guide
+
+## Overview
+Health checks monitor endpoint availability and automatically route traffic away from unhealthy resources, ensuring high availability.
+
+## Health Check Types
+1. Endpoint Health Checks
+   - Monitor HTTP/HTTPS endpoints
+   - TCP connection checks
+   - String matching in responses
+
+2. Calculated Health Checks
+   - Combine multiple health checks
+   - AND, OR, NOT logic
+   - Monitor child health check status
+
+3. CloudWatch Alarm Health Checks
+   - Based on CloudWatch metrics
+   - Custom application metrics
+   - Infrastructure health
+
+## Configuration Parameters
+- Protocol: HTTP, HTTPS, TCP
+- IP address or domain name
+- Port number
+- Path (for HTTP/HTTPS)
+- Check interval: 30 seconds (standard) or 10 seconds (fast)
+- Failure threshold: consecutive failures before marking unhealthy
+- String matching: expected response content
+
+## Best Practices
+- Use fast interval (10s) for critical services
+- Set failure threshold to 3 for balance
+- Enable SNI for HTTPS health checks
+- Monitor health check status in CloudWatch
+- Create alarms for health check failures
+
+## Integration with Routing
+- Weighted routing: route around unhealthy endpoints
+- Failover routing: automatic failover to secondary
+- Latency routing: exclude unhealthy regions
+- Geolocation routing: skip unhealthy locations
+
+## Security Considerations
+- Health check sources: AWS IP ranges
+- Configure security groups to allow health checks
+- Use HTTPS for encrypted health checks
+- Protect health check endpoints from abuse
+- Avoid exposing sensitive data in health checks
+
+## Cost Optimization
+- Basic health checks: $0.50/month per endpoint
+- Fast interval: higher cost but faster failover
+- Consider using calculated health checks to reduce costs
+- Delete unused health checks
+
+## Monitoring and Alerting
+- CloudWatch metrics for health check status
+- SNS notifications for state changes
+- Dashboard for overall health visualization
+- Historical health check data analysis
