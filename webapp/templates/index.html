@@ -2431,14 +2431,17 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
                                     </div>
                                 </div>
 
-                                <div class="form-section submit-section">
-                                    <button type="submit" class="scan-button">
-                                        <span class="btn-icon">🚀</span>
-                                        <span>Start Route53 Security Scan</span>
-                                    </button>
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-primary">🚀 Scan</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
                                 </div>
                             </div>
                         </form>
+
+                        <div class="loading" id="route53-loading">
+                            <div class="spinner"></div>
+                            <p>Scanning Route53 hosted zones...</p>
+                        </div>
 
                         <div class="results-panel" id="route53-results-panel">
                             <div id="route53ResultsContent"></div>
@@ -3529,7 +3532,7 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
             // Check if landing page passed a service parameter
             const urlParams = new URLSearchParams(window.location.search);
             const serviceParam = urlParams.get('service');
-            if (serviceParam && ['s3', 'ec2', 'iam', 'lambda'].includes(serviceParam)) {
+            if (serviceParam && ['s3', 'ec2', 'iam', 'lambda', 'route53', 'dashboard'].includes(serviceParam)) {
                 switchService(serviceParam, null);
             }
         });
