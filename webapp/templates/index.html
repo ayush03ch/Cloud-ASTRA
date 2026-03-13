@@ -1542,6 +1542,14 @@
                     <span class="nav-icon" style="font-size:20px;">🔌</span>
                     <span>API Gateway</span>
                 </div>
+                <div class="nav-item" onclick="switchService('cloudfront', this)" title="CloudFront Security">
+                    <span class="nav-icon" style="font-size:20px;">⚡</span>
+                    <span>CloudFront</span>
+                </div>
+                <div class="nav-item" onclick="switchService('vpc', this)" title="VPC Security">
+                    <span class="nav-icon" style="font-size:20px;">🌐</span>
+                    <span>VPC</span>
+                </div>
             </nav>
 
             <div class="sidebar-footer" id="terminalToggle" onclick="toggleTerminal()" title="Toggle Terminal">
@@ -2548,6 +2556,114 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
                         </div>
                     </div>
 
+                    <!-- CLOUDFRONT SCREEN -->
+                    <div class="service-screen" id="cloudfront-screen">
+                        <form id="cloudfrontScanForm" onsubmit="submitScan(event)">
+                            <div class="form-wrapper">
+                                <div class="form-section">
+                                    <h3>🔐 AWS Configuration</h3>
+                                    <div class="form-group">
+                                        <label>IAM Role ARN</label>
+                                        <input type="text" id="cloudfrontRoleArn" name="roleArn"
+                                            placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                                        <div class="help-text">IAM role in the target AWS account</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>External ID</label>
+                                        <input type="text" id="cloudfrontExternalId" name="externalId"
+                                            value="my-cloud-astra-role">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>AWS Region</label>
+                                        <select id="cloudfrontRegion" name="region">
+                                            <option value="us-east-1">US East (N. Virginia)</option>
+                                            <option value="us-west-2">US West (Oregon)</option>
+                                            <option value="eu-west-1">Europe (Ireland)</option>
+                                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>⚡ Scan Scope</h3>
+                                    <div class="form-group">
+                                        <label>Distribution ID (leave blank to scan all)</label>
+                                        <input type="text" id="cloudfrontScope" name="cloudfrontScope"
+                                            placeholder="all  —  or enter a specific CloudFront distribution ID">
+                                    </div>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-primary">🚀 Scan</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="loading" id="cloudfront-loading">
+                            <div class="spinner"></div>
+                            <p>Scanning CloudFront distributions...</p>
+                        </div>
+
+                        <div class="results-panel" id="cloudfront-results-panel">
+                            <div id="cloudfrontResultsContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- VPC SCREEN -->
+                    <div class="service-screen" id="vpc-screen">
+                        <form id="vpcScanForm" onsubmit="submitScan(event)">
+                            <div class="form-wrapper">
+                                <div class="form-section">
+                                    <h3>🔐 AWS Configuration</h3>
+                                    <div class="form-group">
+                                        <label>IAM Role ARN</label>
+                                        <input type="text" id="vpcRoleArn" name="roleArn"
+                                            placeholder="arn:aws:iam::ACCOUNT-ID:role/ROLE-NAME">
+                                        <div class="help-text">IAM role in the target AWS account</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>External ID</label>
+                                        <input type="text" id="vpcExternalId" name="externalId"
+                                            value="my-cloud-astra-role">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>AWS Region</label>
+                                        <select id="vpcRegion" name="region">
+                                            <option value="us-east-1">US East (N. Virginia)</option>
+                                            <option value="us-west-2">US West (Oregon)</option>
+                                            <option value="eu-west-1">Europe (Ireland)</option>
+                                            <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>🌐 Scan Scope</h3>
+                                    <div class="form-group">
+                                        <label>VPC ID (leave blank to scan all)</label>
+                                        <input type="text" id="vpcScope" name="vpcScope"
+                                            placeholder="all  —  or enter a specific VPC ID">
+                                    </div>
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button type="submit" class="btn btn-primary">🚀 Scan</button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="loading" id="vpc-loading">
+                            <div class="spinner"></div>
+                            <p>Scanning VPC configurations...</p>
+                        </div>
+
+                        <div class="results-panel" id="vpc-results-panel">
+                            <div id="vpcResultsContent"></div>
+                        </div>
+                    </div>
+
                     <!-- DASHBOARD SCREEN -->
                     <div class="service-screen" id="dashboard-screen">
                         <div class="form-section">
@@ -2603,7 +2719,7 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
                 element.classList.add('active');
             } else {
                 // Find and activate the nav item for this service
-                const serviceIndex = { 's3': 0, 'ec2': 1, 'iam': 2, 'lambda': 3, 'route53': 4, 'apigateway': 5 }[service];
+                const serviceIndex = { 's3': 0, 'ec2': 1, 'iam': 2, 'lambda': 3, 'route53': 4, 'apigateway': 5, 'cloudfront': 6, 'vpc': 7 }[service];
                 if (serviceIndex !== undefined) {
                     document.querySelectorAll('.nav-item')[serviceIndex].classList.add('active');
                 }
@@ -2619,6 +2735,8 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
                 'lambda': '<img src="/static/logos/lambda.png" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> Lambda Security Scanner',
                 'route53': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;">🌐</span> Route53 DNS Security',
                 'apigateway': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;">🔌</span> API Gateway Security',
+                'cloudfront': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;">⚡</span> CloudFront Security',
+                'vpc': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;">🌐</span> VPC Security',
                 'dashboard': '📊 Dashboard'
             };
             const title = titles[service];
@@ -2847,6 +2965,28 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
                     }
                 };
                 console.log('🐛 API Gateway Payload:', JSON.stringify(data, null, 2));
+            } else if (currentService === 'cloudfront') {
+                data = {
+                    agent: 'cloudfront',
+                    role_arn: formData.get('roleArn'),
+                    external_id: formData.get('externalId'),
+                    region: formData.get('region'),
+                    auto_fix: false,
+                    cloudfront_scope: formData.get('cloudfrontScope') || 'all',
+                    cloudfront_checks: {}
+                };
+                console.log('🐛 CloudFront Payload:', JSON.stringify(data, null, 2));
+            } else if (currentService === 'vpc') {
+                data = {
+                    agent: 'vpc',
+                    role_arn: formData.get('roleArn'),
+                    external_id: formData.get('externalId'),
+                    region: formData.get('region'),
+                    auto_fix: false,
+                    vpc_scope: formData.get('vpcScope') || 'all',
+                    vpc_checks: {}
+                };
+                console.log('🐛 VPC Payload:', JSON.stringify(data, null, 2));
             }
 
             const getLoadingId = () => {
@@ -2856,6 +2996,8 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
                 if (currentService === 'lambda') return 'lambda-loading';
                 if (currentService === 'route53') return 'route53-loading';
                 if (currentService === 'apigateway') return 'apigateway-loading';
+                if (currentService === 'cloudfront') return 'cloudfront-loading';
+                if (currentService === 'vpc') return 'vpc-loading';
                 return 'loading';
             };
 
@@ -2900,6 +3042,12 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
             } else if (currentService === 'apigateway') {
                 resultsPanel = document.getElementById('apigateway-results-panel');
                 resultsContent = document.getElementById('apigwResultsContent');
+            } else if (currentService === 'cloudfront') {
+                resultsPanel = document.getElementById('cloudfront-results-panel');
+                resultsContent = document.getElementById('cloudfrontResultsContent');
+            } else if (currentService === 'vpc') {
+                resultsPanel = document.getElementById('vpc-results-panel');
+                resultsContent = document.getElementById('vpcResultsContent');
             }
 
             if (result.error) {
