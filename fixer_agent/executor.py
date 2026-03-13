@@ -37,6 +37,31 @@ class Executor:
             self.logger.error(f"Failed to initialize Lambda client: {e}")
             self.lambda_client = None
 
+        # Initialize Route53 client
+        try:
+            self.route53_client = boto3.client(
+                "route53",
+                aws_access_key_id=creds.get("aws_access_key_id"),
+                aws_secret_access_key=creds.get("aws_secret_access_key"),
+                aws_session_token=creds.get("aws_session_token")
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to initialize Route53 client: {e}")
+            self.route53_client = None
+
+        # Initialize API Gateway client
+        try:
+            self.apigw_client = boto3.client(
+                "apigateway",
+                aws_access_key_id=creds.get("aws_access_key_id"),
+                aws_secret_access_key=creds.get("aws_secret_access_key"),
+                aws_session_token=creds.get("aws_session_token"),
+                region_name=creds.get("region", "us-east-1")
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to initialize API Gateway client: {e}")
+            self.apigw_client = None
+
 
     def run(self, finding: dict) -> bool:
         """
@@ -422,4 +447,278 @@ class Executor:
             return True
         except Exception as e:
             self.logger.error(f"❌ Failed to enable logging for {function_name}: {e}")
+            return False
+
+    # ------------------------------------------------------------------ #
+    #  API Gateway fixes                                                   #
+    # ------------------------------------------------------------------ #
+
+    def _resolve_apigw_resource(self, resource: str):
+        """Return (client, api_id, stage_name) from resource string.
+
+        Accepted formats:
+        - apiName/stage
+        - apiId/stage
+        - apiName
+        - region:apiName/stage
+        - region:apiId/stage
+        """
+        if not self.apigw_client:
+            raise RuntimeError("API Gateway client not initialized")
+        client = self.apigw_client
+        target = resource
+
+        # Optional region prefix: region:api/stage
+        if ":" in resource:
+            prefix, remainder = resource.split(":", 1)
+            if "-" in prefix and any(ch.isdigit() for ch in prefix):
+                target = remainder
+                client = boto3.client(
+                    "apigateway",
+                    aws_access_key_id=self.creds.get("aws_access_key_id"),
+                    aws_secret_access_key=self.creds.get("aws_secret_access_key"),
+                    aws_session_token=self.creds.get("aws_session_token"),
+                    region_name=prefix,
+                )
+
+        if "/" in target:
+            parts = target.split("/", 1)
+            api_label, stage_name = parts[0], parts[1]
+        else:
+            api_label  = target
+            stage_name = None
+
+        # Try using as api_id directly, fall back to name lookup
+        try:
+            client.get_rest_api(restApiId=api_label)
+            return client, api_label, stage_name
+        except Exception:
+            pass
+
+        # Look up by name
+        apis = client.get_rest_apis().get("items", [])
+        for api in apis:
+            if api["name"] == api_label:
+                return client, api["id"], stage_name
+        raise ValueError(f"API Gateway REST API not found: {api_label}")
+
+    # ------------------------------------------------------------------
+    # API Gateway account-level CloudWatch role provisioning
+    # ------------------------------------------------------------------
+    def _ensure_apigw_cloudwatch_role(self, apigw_client) -> bool:
+        """
+        Ensure API Gateway account settings have a CloudWatch Logs execution role.
+        Creates the IAM role if it does not already exist, then wires it into the
+        account-level API Gateway settings.  Returns True on success.
+        """
+        import boto3 as _boto3
+        import json as _json
+
+        ROLE_NAME = "APIGatewayCloudWatchLogsRole"
+        MANAGED_POLICY = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+        TRUST_POLICY = _json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": {"Service": "apigateway.amazonaws.com"},
+                "Action": "sts:AssumeRole"
+            }]
+        })
+
+        # Check whether account already has a role configured
+        try:
+            account = apigw_client.get_account()
+            if account.get("cloudwatchRoleArn"):
+                return True  # already set
+        except Exception as e:
+            self.logger.warning(f"Could not read API Gateway account settings: {e}")
+
+        # Build IAM client in the same region as API GW
+        iam_client = _boto3.client(
+            "iam",
+            aws_access_key_id=self.creds.get("aws_access_key_id"),
+            aws_secret_access_key=self.creds.get("aws_secret_access_key"),
+            aws_session_token=self.creds.get("aws_session_token"),
+        )
+
+        # Find or create the role
+        role_arn = None
+        try:
+            role_arn = iam_client.get_role(RoleName=ROLE_NAME)["Role"]["Arn"]
+            self.logger.info(f"Found existing CloudWatch role: {role_arn}")
+        except iam_client.exceptions.NoSuchEntityException:
+            try:
+                role_arn = iam_client.create_role(
+                    RoleName=ROLE_NAME,
+                    AssumeRolePolicyDocument=TRUST_POLICY,
+                    Description="Allows API Gateway to push logs to CloudWatch Logs",
+                )["Role"]["Arn"]
+                iam_client.attach_role_policy(RoleName=ROLE_NAME, PolicyArn=MANAGED_POLICY)
+                self.logger.info(f"Created CloudWatch role: {role_arn}")
+                # IAM role propagation delay
+                time.sleep(10)
+            except Exception as e:
+                self.logger.error(f"Failed to create IAM role {ROLE_NAME}: {e}")
+                return False
+
+        # Set the role in API Gateway account settings
+        try:
+            apigw_client.update_account(
+                patchOperations=[{"op": "replace", "path": "/cloudwatchRoleArn", "value": role_arn}]
+            )
+            self.logger.info(f"✅ Configured API Gateway CloudWatch role: {role_arn}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to set CloudWatch role in API Gateway account: {e}")
+            return False
+
+    def enable_apigw_access_logging(self, resource: str) -> bool:
+        """Enable access logging on an API Gateway stage (creates a log group if needed)."""
+        import boto3 as _boto3
+        if not self.apigw_client:
+            self.logger.error("API Gateway client not initialized")
+            return False
+        try:
+            client, api_id, stage_name = self._resolve_apigw_resource(resource)
+            if not stage_name or stage_name == "__api_level__":
+                # Fetch first deployed stage
+                stages = client.get_stages(restApiId=api_id).get("item", [])
+                if not stages:
+                    self.logger.error(f"No stages found for API {api_id}")
+                    return False
+                stage_name = stages[0]["stageName"]
+
+            # Ensure account-level CloudWatch role is configured (required prerequisite)
+            if not self._ensure_apigw_cloudwatch_role(client):
+                self.logger.error("Cannot enable access logging: CloudWatch role setup failed")
+                return False
+
+            # Create / ensure CloudWatch log group in the SAME region as API Gateway stage.
+            target_region = client.meta.region_name or self.creds.get("region", "us-east-1")
+            logs_client = _boto3.client(
+                "logs",
+                aws_access_key_id=self.creds.get("aws_access_key_id"),
+                aws_secret_access_key=self.creds.get("aws_secret_access_key"),
+                aws_session_token=self.creds.get("aws_session_token"),
+                region_name=target_region,
+            )
+            log_group_name = f"/aws/apigateway/{api_id}/{stage_name}"
+            try:
+                logs_client.create_log_group(logGroupName=log_group_name)
+            except logs_client.exceptions.ResourceAlreadyExistsException:
+                pass
+
+            # Get the log group ARN
+            desc = logs_client.describe_log_groups(logGroupNamePrefix=log_group_name)
+            log_group_arn = desc["logGroups"][0]["arn"].rstrip(":*")
+
+            client.update_stage(
+                restApiId=api_id,
+                stageName=stage_name,
+                patchOperations=[
+                    {"op": "replace", "path": "/accessLogSettings/destinationArn", "value": log_group_arn},
+                    {"op": "replace", "path": "/accessLogSettings/format",
+                     "value": '$context.requestId $context.status $context.identity.sourceIp $context.httpMethod $context.resourcePath'},
+                ]
+            )
+            self.logger.info(f"✅ Enabled access logging for {api_id}/{stage_name}")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to enable access logging for {resource}: {e}")
+            return False
+
+    def enable_apigw_xray_tracing(self, resource: str) -> bool:
+        """Enable X-Ray active tracing on an API Gateway stage."""
+        if not self.apigw_client:
+            self.logger.error("API Gateway client not initialized")
+            return False
+        try:
+            client, api_id, stage_name = self._resolve_apigw_resource(resource)
+            if not stage_name or stage_name == "__api_level__":
+                stages = client.get_stages(restApiId=api_id).get("item", [])
+                if not stages:
+                    return False
+                stage_name = stages[0]["stageName"]
+
+            client.update_stage(
+                restApiId=api_id,
+                stageName=stage_name,
+                patchOperations=[
+                    {"op": "replace", "path": "/tracingEnabled", "value": "true"}
+                ]
+            )
+            self.logger.info(f"✅ Enabled X-Ray tracing for {api_id}/{stage_name}")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to enable X-Ray tracing for {resource}: {e}")
+            return False
+
+    def disable_apigw_default_endpoint(self, resource: str) -> bool:
+        """Disable the default execute-api endpoint for a REST API."""
+        if not self.apigw_client:
+            self.logger.error("API Gateway client not initialized")
+            return False
+        try:
+            client, api_id, _ = self._resolve_apigw_resource(resource)
+            client.update_rest_api(
+                restApiId=api_id,
+                patchOperations=[
+                    {"op": "replace", "path": "/disableExecuteApiEndpoint", "value": "true"}
+                ]
+            )
+            self.logger.info(f"✅ Disabled default execute-api endpoint for {api_id}")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to disable default endpoint for {resource}: {e}")
+            return False
+
+    def delete_wildcard_records(self, zone_name: str) -> bool:
+        """Delete all wildcard DNS records from a Route53 hosted zone."""
+        if not self.route53_client:
+            self.logger.error("Route53 client not initialized")
+            return False
+
+        try:
+            # Find hosted zone by name
+            response = self.route53_client.list_hosted_zones()
+            zone_id = None
+            for zone in response.get('HostedZones', []):
+                # Normalize: strip trailing dot for comparison
+                if zone['Name'].rstrip('.') == zone_name.rstrip('.'):
+                    zone_id = zone['Id']
+                    break
+
+            if not zone_id:
+                self.logger.error(f"Hosted zone not found: {zone_name}")
+                return False
+
+            # List all records and find wildcards
+            records_response = self.route53_client.list_resource_record_sets(HostedZoneId=zone_id)
+            record_sets = records_response.get('ResourceRecordSets', [])
+
+            wildcard_records = [
+                r for r in record_sets
+                if r.get('Name', '').startswith('\\052.')
+                or r.get('Name', '').startswith('*.')
+            ]
+
+            if not wildcard_records:
+                self.logger.info(f"No wildcard records found in {zone_name}")
+                return True
+
+            # Delete them all in one batch
+            changes = [
+                {"Action": "DELETE", "ResourceRecordSet": record}
+                for record in wildcard_records
+            ]
+
+            self.route53_client.change_resource_record_sets(
+                HostedZoneId=zone_id,
+                ChangeBatch={"Changes": changes}
+            )
+            self.logger.info(f"✅ Deleted {len(wildcard_records)} wildcard record(s) from {zone_name}")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"❌ Failed to delete wildcard records from {zone_name}: {e}")
             return False

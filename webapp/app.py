@@ -115,6 +115,8 @@ def api_scan():
         lambda_checks = None
         route53_scope = None
         route53_checks = None
+        apigw_scope = None
+        apigw_checks = None
         
         if agent == 's3':
             # S3-specific parameters
@@ -200,6 +202,25 @@ def api_scan():
             
             app.logger.info(f"Route53 Scan - Scope: {route53_scope}, Intent: {route53_intent}, Checks: {route53_checks}")
         
+        elif agent == 'apigateway':
+            # API Gateway-specific parameters
+            apigw_scope  = data.get('apigw_scope', 'all')
+            apigw_intent = data.get('apigw_intent', '')
+
+            apigw_checks = data.get('apigw_checks', {
+                'access_logging': True,
+                'xray_tracing':   True,
+                'waf':            True,
+                'default_endpoint': True,
+                'tls_policy':     True,
+            })
+
+            user_intent_input = {}
+            if apigw_intent:
+                user_intent_input['_global_intent'] = apigw_intent
+
+            app.logger.info(f"API Gateway Scan - Scope: {apigw_scope}, Intent: {apigw_intent}, Checks: {apigw_checks}")
+        
         # Run intent-aware scan and fix
         try:
             results = supervisor.scan_and_fix(
@@ -212,7 +233,10 @@ def api_scan():
                 lambda_function_name=lambda_function_name if agent == 'lambda' else None,
                 lambda_checks=lambda_checks if agent == 'lambda' else None,
                 route53_scope=route53_scope if agent == 'route53' else None,
-                route53_checks=route53_checks if agent == 'route53' else None
+                route53_checks=route53_checks if agent == 'route53' else None,
+                apigw_scope=apigw_scope if agent == 'apigateway' else None,
+                apigw_checks=apigw_checks if agent == 'apigateway' else None,
+                auto_fix=auto_fix
             )
             
             # Process results for web interface
@@ -275,8 +299,10 @@ def api_scan():
                 findings['ec2'] = deduplicate_findings(findings['ec2'])
             elif agent == 'iam' and 'iam' in findings:
                 findings['iam'] = deduplicate_findings(findings['iam'])
-            elif agent == 'lambda' and 'lambda' in findings:
+            elif agent == 'lambda':
                 findings['lambda'] = deduplicate_findings(findings['lambda'])
+            elif agent == 'apigateway' and 'apigateway' in findings:
+                findings['apigateway'] = deduplicate_findings(findings['apigateway'])
             
             # Count findings based on agent type
             if agent == 's3':
@@ -287,6 +313,8 @@ def api_scan():
                 findings_count = len(findings.get('iam', []))
             elif agent == 'lambda':
                 findings_count = len(findings.get('lambda', []))
+            elif agent == 'apigateway':
+                findings_count = len(findings.get('apigateway', []))
             else:
                 # Count all findings
                 findings_count = sum(len(v) if isinstance(v, list) else 0 for v in findings.values())

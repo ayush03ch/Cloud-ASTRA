@@ -5,7 +5,7 @@ class WildcardRecordRule:
     
     id = "route53_wildcard_records"
     detection = "Wildcard DNS records detected - potential security risk"
-    auto_safe = False  # Wildcards may be intentional
+    auto_safe = True  # Safe to auto-delete wildcard records
     
     def __init__(self):
         self.fix_instructions = [
@@ -31,8 +31,8 @@ class WildcardRecordRule:
             "",
             "💡 Explicit records are more secure than wildcards"
         ]
-        self.can_auto_fix = False  # Requires business decision
-        self.fix_type = "review_wildcard_records"
+        self.can_auto_fix = True  # Can automatically delete wildcard records
+        self.fix_type = "delete_wildcard_records"
     
     def check(self, client, zone_id, zone_name):
         """Check for wildcard DNS records."""
@@ -55,7 +55,33 @@ class WildcardRecordRule:
             return False
     
     def fix(self, client, zone_id, zone_name):
-        """Review wildcard records (requires manual decision)."""
-        print(f"⚠️ Wildcard record review requires business context")
-        print(f"Follow the fix_instructions for {zone_name}")
-        return False  # Manual review required
+        """Delete all wildcard DNS records from the hosted zone."""
+        try:
+            response = client.list_resource_record_sets(HostedZoneId=zone_id)
+            record_sets = response.get('ResourceRecordSets', [])
+
+            wildcard_records = [
+                r for r in record_sets
+                if r.get('Name', '').startswith('\\052.')
+                or r.get('Name', '').startswith('*.')
+            ]
+
+            if not wildcard_records:
+                print(f"No wildcard records found in {zone_name}")
+                return True
+
+            changes = [
+                {"Action": "DELETE", "ResourceRecordSet": record}
+                for record in wildcard_records
+            ]
+
+            client.change_resource_record_sets(
+                HostedZoneId=zone_id,
+                ChangeBatch={"Changes": changes}
+            )
+            print(f"✅ Deleted {len(wildcard_records)} wildcard record(s) from {zone_name}")
+            return True
+
+        except Exception as e:
+            print(f"❌ Failed to delete wildcard records from {zone_name}: {e}")
+            return False
