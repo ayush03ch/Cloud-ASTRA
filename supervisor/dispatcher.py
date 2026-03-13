@@ -5,6 +5,8 @@ from agents.iam_agent.iam_agent import IAMAgent
 from agents.lambda_agents.lambda_agent import LambdaAgent
 from agents.route53_agent.route53_agent import Route53Agent
 from agents.apigateway_agent.apigateway_agent import APIGatewayAgent
+from agents.cloudfront_agent.cloudfront_agent import CloudFrontAgent
+from agents.vpc_agent.vpc_agent import VPCAgent
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,13 +20,13 @@ class Dispatcher:
     def __init__(self, creds):
         self.creds = creds
 
-    def dispatch(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None, lambda_function_name=None, lambda_checks=None, route53_scope=None, route53_checks=None, apigw_scope=None, apigw_checks=None):
+    def dispatch(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None, lambda_function_name=None, lambda_checks=None, route53_scope=None, route53_checks=None, apigw_scope=None, apigw_checks=None, cloudfront_scope=None, cloudfront_checks=None, vpc_scope=None, vpc_checks=None):
         """
         Dispatch scan to appropriate service(s).
         
         Args:
             user_intent_input: User's explicit intent for resources
-            service: Specific service to scan ('s3', 'ec2', 'iam', 'lambda', 'route53', or None for all)
+            service: Specific service to scan ('s3', 'ec2', 'iam', 'lambda', 'route53', 'apigateway', 'cloudfront', 'vpc', or None for all)
             ec2_filters: Dict with instance_ids and tags filters for EC2
             ec2_checks: Dict with check flags for EC2 (security_groups, ebs_encryption, etc.)
             iam_scope: Scope for IAM scan ('account', 'users', 'roles', 'policies')
@@ -35,6 +37,10 @@ class Dispatcher:
             route53_checks: Dict with check flags for Route53 (dnssec, query_logging, etc.)
             apigw_scope: Specific REST API id/name or 'all'
             apigw_checks: Dict with check flags for API Gateway
+            cloudfront_scope: Scope for CloudFront scan ('all', or specific distribution ID)
+            cloudfront_checks: Dict with check flags for CloudFront
+            vpc_scope: Scope for VPC scan ('all', or specific VPC ID)
+            vpc_checks: Dict with check flags for VPC
         """
         results = {}
         
@@ -142,5 +148,33 @@ class Dispatcher:
             except Exception as e:
                 logger.error(f"API Gateway scan failed: {e}")
                 results["apigateway"] = []
+
+        # CloudFront Agent
+        if 'cloudfront' in services_to_scan:
+            try:
+                cloudfront_agent = CloudFrontAgent(creds=self.creds)
+                scope = cloudfront_scope or "all"
+                results["cloudfront"] = cloudfront_agent.scan(
+                    user_intent_input=user_intent_input,
+                    scope=scope
+                )
+                logger.info("CloudFront scan completed successfully")
+            except Exception as e:
+                logger.error(f"CloudFront scan failed: {e}")
+                results["cloudfront"] = []
+
+        # VPC Agent
+        if 'vpc' in services_to_scan:
+            try:
+                vpc_agent = VPCAgent(creds=self.creds)
+                scope = vpc_scope or "all"
+                results["vpc"] = vpc_agent.scan(
+                    user_intent_input=user_intent_input,
+                    scope=scope
+                )
+                logger.info("VPC scan completed successfully")
+            except Exception as e:
+                logger.error(f"VPC scan failed: {e}")
+                results["vpc"] = []
 
         return {"findings": results}
