@@ -24,7 +24,7 @@ class SupervisorAgent:
         logging.info(f"Assumed role: {self.role_arn}")
         return self.creds
 
-    def scan_and_fix(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None, lambda_function_name=None, lambda_checks=None, route53_scope=None, route53_checks=None):
+    def scan_and_fix(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None, lambda_function_name=None, lambda_checks=None, route53_scope=None, route53_checks=None, apigw_scope=None, apigw_checks=None, auto_fix=True):
         """Run dispatcher scans and apply fixes with FixerAgent.
         
         Args:
@@ -38,6 +38,7 @@ class SupervisorAgent:
             lambda_checks: Dict with Lambda security checks to perform
             route53_scope: Scope for Route53 scan ('all', 'public', 'private', or specific zone ID)
             route53_checks: Dict with Route53 security checks to perform
+            auto_fix: Whether to apply automatic fixes during scan
         """
         if not self.creds:
             raise RuntimeError("Must call assume() before scan_and_fix()")
@@ -53,7 +54,9 @@ class SupervisorAgent:
             lambda_function_name=lambda_function_name,
             lambda_checks=lambda_checks,
             route53_scope=route53_scope,
-            route53_checks=route53_checks
+            route53_checks=route53_checks,
+            apigw_scope=apigw_scope,
+            apigw_checks=apigw_checks
         )
         
         # Debug: Log the raw findings structure
@@ -82,9 +85,27 @@ class SupervisorAgent:
         
         logging.info(f"Total findings: {total_findings}, Auto-fixable: {auto_fixable_count}")
 
-        # Apply fixes using FixerAgent
-        fixer = FixerAgent(self.creds)
-        applied_fixes, pending_fixes = fixer.apply(findings)
+        # Apply fixes using FixerAgent only when requested.
+        # For detect-only scans, return all findings as pending so users can click Auto-Fix manually.
+        if auto_fix:
+            fixer = FixerAgent(self.creds)
+            applied_fixes, pending_fixes = fixer.apply(findings)
+        else:
+            applied_fixes = []
+            pending_fixes = []
+            findings_data = findings.get('findings', findings) if isinstance(findings, dict) else {}
+            if isinstance(findings_data, dict):
+                for _, service_findings in findings_data.items():
+                    if isinstance(service_findings, list):
+                        for finding in service_findings:
+                            if finding.get("resource") and finding.get("issue"):
+                                pending_fixes.append({
+                                    "resource": finding.get("resource"),
+                                    "issue": finding.get("issue"),
+                                    "fix_instructions": finding.get("fix_instructions", []),
+                                    "can_auto_fix": finding.get("can_auto_fix", False),
+                                    "fix_type": finding.get("fix_type")
+                                })
 
         # Log the results
         logging.info(f"Auto-fixes applied: {len(applied_fixes)}")

@@ -4,6 +4,7 @@ from agents.ec2_agent.ec2_agent import EC2Agent
 from agents.iam_agent.iam_agent import IAMAgent
 from agents.lambda_agents.lambda_agent import LambdaAgent
 from agents.route53_agent.route53_agent import Route53Agent
+from agents.apigateway_agent.apigateway_agent import APIGatewayAgent
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class Dispatcher:
     def __init__(self, creds):
         self.creds = creds
 
-    def dispatch(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None, lambda_function_name=None, lambda_checks=None, route53_scope=None, route53_checks=None):
+    def dispatch(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None, lambda_function_name=None, lambda_checks=None, route53_scope=None, route53_checks=None, apigw_scope=None, apigw_checks=None):
         """
         Dispatch scan to appropriate service(s).
         
@@ -32,6 +33,8 @@ class Dispatcher:
             lambda_checks: Dict with check flags for Lambda
             route53_scope: Scope for Route53 scan ('all', 'public', 'private', or specific zone ID)
             route53_checks: Dict with check flags for Route53 (dnssec, query_logging, etc.)
+            apigw_scope: Specific REST API id/name or 'all'
+            apigw_checks: Dict with check flags for API Gateway
         """
         results = {}
         
@@ -126,4 +129,18 @@ class Dispatcher:
                 logger.error(f"Route53 scan failed: {e}")
                 results["route53"] = []
         
+        # API Gateway Agent
+        if 'apigateway' in services_to_scan:
+            try:
+                apigw_agent = APIGatewayAgent(creds=self.creds)
+                scope = apigw_scope or "all"
+                results["apigateway"] = apigw_agent.scan(
+                    user_intent_input=user_intent_input,
+                    scope=scope
+                )
+                logger.info("API Gateway scan completed successfully")
+            except Exception as e:
+                logger.error(f"API Gateway scan failed: {e}")
+                results["apigateway"] = []
+
         return {"findings": results}

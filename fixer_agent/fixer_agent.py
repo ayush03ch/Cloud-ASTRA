@@ -136,6 +136,54 @@ class FixerAgent:
                     "details": ["Created CloudWatch log group", "Configured JSON log format", "Logs will be stored in /aws/lambda/{function-name}"]
                 }
             
+            elif fix_type == "delete_wildcard_records":
+                success = self.executor.delete_wildcard_records(resource)
+                return {
+                    "success": success,
+                    "message": f"Deleted wildcard DNS records from hosted zone {resource}",
+                    "details": [
+                        "Removed all wildcard (*.domain) DNS records",
+                        "Replace with explicit subdomain records to reduce attack surface",
+                        "Review DNS configuration to re-add only necessary subdomains"
+                    ]
+                }
+
+            elif fix_type == "enable_apigw_access_logging":
+                success = self.executor.enable_apigw_access_logging(resource)
+                return {
+                    "success": success,
+                    "message": f"Enabled access logging for API Gateway stage {resource}",
+                    "details": [
+                        "Created CloudWatch log group for API access logs",
+                        "Configured log format with requestId, status, sourceIp, method, and path",
+                        "Monitor logs in CloudWatch Logs Insights for security analysis",
+                    ]
+                }
+
+            elif fix_type == "enable_apigw_xray_tracing":
+                success = self.executor.enable_apigw_xray_tracing(resource)
+                return {
+                    "success": success,
+                    "message": f"Enabled X-Ray active tracing for API Gateway stage {resource}",
+                    "details": [
+                        "X-Ray active tracing enabled on the stage",
+                        "View traces in AWS X-Ray console for latency analysis",
+                        "No additional code changes required in Lambda",
+                    ]
+                }
+
+            elif fix_type == "disable_apigw_default_endpoint":
+                success = self.executor.disable_apigw_default_endpoint(resource)
+                return {
+                    "success": success,
+                    "message": f"Disabled default execute-api endpoint for {resource}",
+                    "details": [
+                        "The default *.execute-api.<region>.amazonaws.com endpoint is now blocked",
+                        "Ensure clients are using your custom domain before accessing the API",
+                        "Redeploy the API stage if changes are not reflected immediately",
+                    ]
+                }
+
             else:
                 raise ValueError(f"Unknown fix type: {fix_type}")
                 
