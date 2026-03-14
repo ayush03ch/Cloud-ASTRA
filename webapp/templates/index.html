@@ -3819,7 +3819,7 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
             // Check if landing page passed a service parameter
             const urlParams = new URLSearchParams(window.location.search);
             const serviceParam = urlParams.get('service');
-            if (serviceParam && ['s3', 'ec2', 'iam', 'lambda', 'route53', 'apigateway', 'dashboard'].includes(serviceParam)) {
+            if (serviceParam && ['s3', 'ec2', 'iam', 'lambda', 'route53', 'apigateway', 'cloudfront', 'vpc', 'dashboard'].includes(serviceParam)) {
                 switchService(serviceParam, null);
             }
         });
