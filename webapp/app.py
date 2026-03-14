@@ -117,6 +117,8 @@ def api_scan():
         route53_checks = None
         apigw_scope = None
         apigw_checks = None
+        cloudfront_scope = None
+        cloudfront_checks = None
         
         if agent == 's3':
             # S3-specific parameters
@@ -220,6 +222,18 @@ def api_scan():
                 user_intent_input['_global_intent'] = apigw_intent
 
             app.logger.info(f"API Gateway Scan - Scope: {apigw_scope}, Intent: {apigw_intent}, Checks: {apigw_checks}")
+
+        elif agent == 'cloudfront':
+            # CloudFront-specific parameters
+            cloudfront_scope = data.get('cloudfront_scope', 'all')
+            cloudfront_checks = data.get('cloudfront_checks', {
+                'https_redirect': True,
+                'tls_version': True,
+                'logging': True,
+                'waf': True
+            })
+
+            app.logger.info(f"CloudFront Scan - Scope: {cloudfront_scope}, Checks: {cloudfront_checks}")
         
         # Run intent-aware scan and fix
         try:
@@ -236,6 +250,8 @@ def api_scan():
                 route53_checks=route53_checks if agent == 'route53' else None,
                 apigw_scope=apigw_scope if agent == 'apigateway' else None,
                 apigw_checks=apigw_checks if agent == 'apigateway' else None,
+                cloudfront_scope=cloudfront_scope if agent == 'cloudfront' else None,
+                cloudfront_checks=cloudfront_checks if agent == 'cloudfront' else None,
                 auto_fix=auto_fix
             )
             

@@ -24,7 +24,7 @@ class SupervisorAgent:
         logging.info(f"Assumed role: {self.role_arn}")
         return self.creds
 
-    def scan_and_fix(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None, lambda_function_name=None, lambda_checks=None, route53_scope=None, route53_checks=None, apigw_scope=None, apigw_checks=None, auto_fix=True):
+    def scan_and_fix(self, user_intent_input=None, service=None, ec2_filters=None, ec2_checks=None, iam_scope=None, iam_checks=None, lambda_function_name=None, lambda_checks=None, route53_scope=None, route53_checks=None, apigw_scope=None, apigw_checks=None, cloudfront_scope=None, cloudfront_checks=None, auto_fix=True):
         """Run dispatcher scans and apply fixes with FixerAgent.
         
         Args:
@@ -38,6 +38,8 @@ class SupervisorAgent:
             lambda_checks: Dict with Lambda security checks to perform
             route53_scope: Scope for Route53 scan ('all', 'public', 'private', or specific zone ID)
             route53_checks: Dict with Route53 security checks to perform
+            cloudfront_scope: Scope for CloudFront scan ('all', or specific distribution ID)
+            cloudfront_checks: Dict with CloudFront security checks to perform
             auto_fix: Whether to apply automatic fixes during scan
         """
         if not self.creds:
@@ -56,7 +58,9 @@ class SupervisorAgent:
             route53_scope=route53_scope,
             route53_checks=route53_checks,
             apigw_scope=apigw_scope,
-            apigw_checks=apigw_checks
+            apigw_checks=apigw_checks,
+            cloudfront_scope=cloudfront_scope,
+            cloudfront_checks=cloudfront_checks
         )
         
         # Debug: Log the raw findings structure

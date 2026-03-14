@@ -3,6 +3,7 @@
 import boto3
 import logging
 import time
+import uuid
 from .config import MAX_RETRIES, TIMEOUT
 
 class Executor:
@@ -62,6 +63,19 @@ class Executor:
             self.logger.error(f"Failed to initialize API Gateway client: {e}")
             self.apigw_client = None
 
+        # Initialize CloudFront client
+        try:
+            self.cloudfront_client = boto3.client(
+                "cloudfront",
+                aws_access_key_id=creds.get("aws_access_key_id"),
+                aws_secret_access_key=creds.get("aws_secret_access_key"),
+                aws_session_token=creds.get("aws_session_token"),
+                region_name="us-east-1"
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to initialize CloudFront client: {e}")
+            self.cloudfront_client = None
+
 
     def run(self, finding: dict) -> bool:
         """
@@ -100,6 +114,34 @@ class Executor:
                     return False
             except Exception as e:
                 self.logger.error(f"Error executing Lambda fix: {e}")
+                return False
+
+        # Handle CloudFront service
+        if service == "cloudfront":
+            if not self.cloudfront_client:
+                self.logger.error("CloudFront client not initialized. Skipping fix.")
+                return False
+
+            # CloudFront findings typically use fix_type, while legacy path may provide fix.action
+            fix_type = finding.get("fix_type") or action
+            distribution_id = finding.get("distribution_id")
+            resource = finding.get("resource")
+
+            try:
+                if fix_type == "enforce_https":
+                    return self.enforce_cloudfront_https(distribution_id=distribution_id, resource=resource)
+                elif fix_type == "update_tls_policy":
+                    return self.update_cloudfront_tls_policy(distribution_id=distribution_id, resource=resource)
+                elif fix_type in ("enable_cloudfront_logging", "enable_logging"):
+                    return self.enable_cloudfront_logging(distribution_id=distribution_id, resource=resource)
+                elif fix_type == "attach_waf":
+                    self.logger.warning("CloudFront WAF auto-fix is not implemented (requires explicit WebACL selection)")
+                    return False
+                else:
+                    self.logger.warning(f"Unknown CloudFront action/fix_type: {fix_type}")
+                    return False
+            except Exception as e:
+                self.logger.error(f"Error executing CloudFront fix: {e}")
                 return False
         
         # Handle S3 service
@@ -721,4 +763,161 @@ class Executor:
 
         except Exception as e:
             self.logger.error(f"❌ Failed to delete wildcard records from {zone_name}: {e}")
+            return False
+
+    # ------------------------------------------------------------------
+    # CloudFront fixes
+    # ------------------------------------------------------------------
+
+    def _resolve_cloudfront_distribution_id(self, distribution_id: str = None, resource: str = None) -> str:
+        """Resolve a CloudFront distribution ID from finding fields."""
+        if distribution_id:
+            return distribution_id
+
+        if not resource:
+            raise ValueError("Missing both distribution_id and resource for CloudFront fix")
+
+        # Fallback: map by domain name when only resource is present.
+        paginator = self.cloudfront_client.get_paginator('list_distributions')
+        for page in paginator.paginate():
+            items = page.get('DistributionList', {}).get('Items', [])
+            for dist in items:
+                if dist.get('DomainName') == resource:
+                    return dist['Id']
+
+        raise ValueError(f"Could not resolve CloudFront distribution ID for resource: {resource}")
+
+    def enforce_cloudfront_https(self, distribution_id: str = None, resource: str = None) -> bool:
+        """Set default cache behavior viewer protocol policy to redirect-to-https."""
+        if not self.cloudfront_client:
+            self.logger.error("CloudFront client not initialized")
+            return False
+
+        try:
+            dist_id = self._resolve_cloudfront_distribution_id(distribution_id, resource)
+            response = self.cloudfront_client.get_distribution_config(Id=dist_id)
+            config = response['DistributionConfig']
+            etag = response['ETag']
+
+            default_behavior = config.get('DefaultCacheBehavior', {})
+            current_policy = default_behavior.get('ViewerProtocolPolicy')
+            if current_policy in ('redirect-to-https', 'https-only'):
+                self.logger.info(f"CloudFront distribution {dist_id} already enforces HTTPS")
+                return True
+
+            config['DefaultCacheBehavior']['ViewerProtocolPolicy'] = 'redirect-to-https'
+
+            self.cloudfront_client.update_distribution(
+                Id=dist_id,
+                DistributionConfig=config,
+                IfMatch=etag
+            )
+            self.logger.info(f"✅ Enabled HTTP->HTTPS redirect for CloudFront distribution {dist_id}")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to enforce HTTPS on CloudFront distribution: {e}")
+            return False
+
+    def update_cloudfront_tls_policy(self, distribution_id: str = None, resource: str = None, minimum_policy: str = "TLSv1.2_2021") -> bool:
+        """Update CloudFront minimum TLS policy to a secure baseline."""
+        if not self.cloudfront_client:
+            self.logger.error("CloudFront client not initialized")
+            return False
+
+        try:
+            dist_id = self._resolve_cloudfront_distribution_id(distribution_id, resource)
+            response = self.cloudfront_client.get_distribution_config(Id=dist_id)
+            config = response['DistributionConfig']
+            etag = response['ETag']
+
+            viewer_cert = config.get('ViewerCertificate', {})
+            current_policy = viewer_cert.get('MinimumProtocolVersion')
+            if current_policy == minimum_policy:
+                self.logger.info(f"CloudFront distribution {dist_id} already uses {minimum_policy}")
+                return True
+
+            config.setdefault('ViewerCertificate', {})['MinimumProtocolVersion'] = minimum_policy
+
+            self.cloudfront_client.update_distribution(
+                Id=dist_id,
+                DistributionConfig=config,
+                IfMatch=etag
+            )
+            self.logger.info(f"✅ Updated CloudFront TLS policy for {dist_id} to {minimum_policy}")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to update CloudFront TLS policy: {e}")
+            return False
+
+    def _ensure_cloudfront_log_bucket(self) -> str:
+        """Ensure a dedicated S3 bucket exists for CloudFront logs and return its DNS-style name."""
+        if not self.s3_client:
+            raise RuntimeError("S3 client not initialized")
+
+        preferred_prefixes = ("cloudfront-log", "cloudfront-logs", "cf-log", "cf-logs", "cloudastra-log")
+
+        # Prefer an existing log-like bucket to avoid creating resources unnecessarily.
+        response = self.s3_client.list_buckets()
+        for bucket in response.get("Buckets", []):
+            name = bucket.get("Name", "")
+            if any(p in name for p in preferred_prefixes):
+                return f"{name}.s3.amazonaws.com"
+
+        # Otherwise create a dedicated bucket for CloudFront logs.
+        sts = boto3.client(
+            "sts",
+            aws_access_key_id=self.creds.get("aws_access_key_id"),
+            aws_secret_access_key=self.creds.get("aws_secret_access_key"),
+            aws_session_token=self.creds.get("aws_session_token"),
+        )
+        account_id = sts.get_caller_identity().get("Account", "unknown")
+        suffix = uuid.uuid4().hex[:8]
+        bucket_name = f"cloudastra-cf-logs-{account_id}-{suffix}".lower()
+
+        # us-east-1 uses create_bucket without LocationConstraint.
+        self.s3_client.create_bucket(Bucket=bucket_name)
+
+        # Best-effort ACL setup for CloudFront standard logs.
+        try:
+            self.s3_client.put_bucket_acl(Bucket=bucket_name, ACL="log-delivery-write")
+        except Exception as e:
+            self.logger.warning(f"CloudFront log bucket ACL setup warning for {bucket_name}: {e}")
+
+        return f"{bucket_name}.s3.amazonaws.com"
+
+    def enable_cloudfront_logging(self, distribution_id: str = None, resource: str = None) -> bool:
+        """Enable CloudFront standard logging using an existing or auto-created S3 log bucket."""
+        if not self.cloudfront_client:
+            self.logger.error("CloudFront client not initialized")
+            return False
+
+        try:
+            dist_id = self._resolve_cloudfront_distribution_id(distribution_id, resource)
+            response = self.cloudfront_client.get_distribution_config(Id=dist_id)
+            config = response["DistributionConfig"]
+            etag = response["ETag"]
+
+            logging_cfg = config.get("Logging", {})
+            if logging_cfg.get("Enabled") is True:
+                self.logger.info(f"CloudFront distribution {dist_id} already has logging enabled")
+                return True
+
+            log_bucket_dns = self._ensure_cloudfront_log_bucket()
+            config["Logging"] = {
+                "Enabled": True,
+                "IncludeCookies": False,
+                "Bucket": log_bucket_dns,
+                "Prefix": f"cloudfront/{dist_id}/",
+            }
+
+            self.cloudfront_client.update_distribution(
+                Id=dist_id,
+                DistributionConfig=config,
+                IfMatch=etag,
+            )
+
+            self.logger.info(f"✅ Enabled CloudFront logging for {dist_id} to {log_bucket_dns}")
+            return True
+        except Exception as e:
+            self.logger.error(f"❌ Failed to enable CloudFront logging: {e}")
             return False

@@ -7,8 +7,8 @@ class TLSVersionRule:
     id = "cloudfront_weak_tls"
     detection = "CloudFront distribution uses a weak or outdated TLS security policy"
     severity = "high"
-    auto_safe = False
-    can_auto_fix = False
+    auto_safe = True
+    can_auto_fix = True
     fix_type = "update_tls_policy"
 
     def __init__(self):

@@ -135,6 +135,18 @@ class FixerAgent:
                     "message": f"Enabled CloudWatch logging for Lambda function {resource}",
                     "details": ["Created CloudWatch log group", "Configured JSON log format", "Logs will be stored in /aws/lambda/{function-name}"]
                 }
+
+            elif fix_type == "enable_cloudfront_logging":
+                success = self.executor.enable_cloudfront_logging(resource=resource)
+                return {
+                    "success": success,
+                    "message": f"Enabled CloudFront access logging for distribution {resource}",
+                    "details": [
+                        "Enabled standard logging in CloudFront distribution settings",
+                        "Configured log delivery to an existing or auto-created S3 log bucket",
+                        "CloudFront deployment may take several minutes to propagate"
+                    ]
+                }
             
             elif fix_type == "delete_wildcard_records":
                 success = self.executor.delete_wildcard_records(resource)
@@ -181,6 +193,28 @@ class FixerAgent:
                         "The default *.execute-api.<region>.amazonaws.com endpoint is now blocked",
                         "Ensure clients are using your custom domain before accessing the API",
                         "Redeploy the API stage if changes are not reflected immediately",
+                    ]
+                }
+
+            elif fix_type == "enforce_https":
+                success = self.executor.enforce_cloudfront_https(resource=resource)
+                return {
+                    "success": success,
+                    "message": f"Enforced HTTP to HTTPS redirect for CloudFront distribution {resource}",
+                    "details": [
+                        "Updated default cache behavior viewer protocol policy to redirect-to-https",
+                        "CloudFront deployment may take several minutes to propagate",
+                    ]
+                }
+
+            elif fix_type == "update_tls_policy":
+                success = self.executor.update_cloudfront_tls_policy(resource=resource)
+                return {
+                    "success": success,
+                    "message": f"Updated CloudFront TLS security policy for distribution {resource}",
+                    "details": [
+                        "Set minimum protocol version to TLSv1.2_2021",
+                        "CloudFront deployment may take several minutes to propagate",
                     ]
                 }
 

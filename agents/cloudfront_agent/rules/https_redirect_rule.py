@@ -4,8 +4,8 @@ class HttpsRedirectRule:
     id = "cloudfront_http_not_redirected"
     detection = "CloudFront distribution does not redirect HTTP to HTTPS"
     severity = "high"
-    auto_safe = False
-    can_auto_fix = False
+    auto_safe = True
+    can_auto_fix = True
     fix_type = "enforce_https"
 
     def __init__(self):

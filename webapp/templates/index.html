@@ -2737,10 +2737,10 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
                 'ec2': '<img src="/static/logos/ec2.svg" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> EC2 Security Scanner',
                 'iam': '<img src="/static/logos/IAM.jpeg" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> IAM Management',
                 'lambda': '<img src="/static/logos/lambda.png" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:8px;"> Lambda Security Scanner',
-                'route53': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;">🌐</span> Route53 DNS Security',
-                'apigateway': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;">🔌</span> API Gateway Security',
-                'cloudfront': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;">⚡</span> CloudFront Security',
-                'vpc': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;">🌐</span> VPC Security',
+                'route53': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;"></span> Route53 DNS Security',
+                'apigateway': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;"></span> API Gateway Security',
+                'cloudfront': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;"></span> CloudFront Security',
+                'vpc': '<span style="font-size:24px;vertical-align:middle;margin-right:8px;"></span> VPC Security',
                 'dashboard': '📊 Dashboard'
             };
             const title = titles[service];
@@ -3531,6 +3531,10 @@ aws iam attach-role-policy --role-name CloudAstraRoute53Role \
                 roleArn = document.getElementById('apigwRoleArn').value;
                 externalId = document.getElementById('apigwExternalId').value;
                 region = document.getElementById('apigwRegion').value;
+            } else if (currentService === 'cloudfront') {
+                roleArn = document.getElementById('cloudfrontRoleArn').value;
+                externalId = document.getElementById('cloudfrontExternalId').value;
+                region = document.getElementById('cloudfrontRegion').value;
             }
             
             if (!roleArn) {

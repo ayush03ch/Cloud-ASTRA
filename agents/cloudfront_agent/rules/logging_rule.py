@@ -4,9 +4,9 @@ class LoggingRule:
     id = "cloudfront_logging_disabled"
     detection = "CloudFront distribution does not have access logging enabled"
     severity = "medium"
-    auto_safe = False
-    can_auto_fix = False
-    fix_type = "enable_logging"
+    auto_safe = True
+    can_auto_fix = True
+    fix_type = "enable_cloudfront_logging"
 
     def __init__(self):
         self.fix_instructions = [
