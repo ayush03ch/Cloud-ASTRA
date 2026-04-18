@@ -85,7 +85,7 @@ pip install -r requirements.txt
 
 ### 4) Configure environment
 
-Create a `.env` file at repo root if needed by your setup. Typical values include LLM keys and app config.
+Create a `.env` file at repo root if needed by your setup. Typical values include LLM keys and app configs
 
 ### 5) Run the app
 
