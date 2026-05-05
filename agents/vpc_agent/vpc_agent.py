@@ -95,10 +95,12 @@ class VPCAgent:
             )
             is_default = vpc.get('IsDefault', False)
             intent = self.intent_detector.detect_intent(vpc_id, name_tag, is_default)
-
+            # Tier 1: deterministic rule checks
+            tier1_found = False
             for rule in self.rules:
                 try:
                     if rule.check(self.client, vpc_id, vpc):
+                        tier1_found = True
                         findings.append({
                             "service": "vpc",
                             "resource": name_tag,
@@ -106,15 +108,72 @@ class VPCAgent:
                             "issue": rule.detection,
                             "rule_id": rule.id,
                             "severity": getattr(rule, "severity", "medium"),
-                            "auto_safe": rule.auto_safe,
-                            "can_auto_fix": rule.can_auto_fix,
-                            "fix_type": rule.fix_type,
-                            "fix_instructions": rule.fix_instructions,
+                            "auto_safe": getattr(rule, "auto_safe", False),
+                            "can_auto_fix": getattr(rule, "can_auto_fix", False),
+                            "fix_type": getattr(rule, "fix_type", None),
+                            "fix_instructions": getattr(rule, "fix_instructions", []),
                             "source": "rules",
                             "tier": 1,
                             "intent": intent,
                         })
                 except Exception as e:
-                    print(f"[VPCAgent] Rule {rule.id} error on {vpc_id}: {e}")
+                    print(f"[VPCAgent] Rule {getattr(rule, 'id', '<unknown>')} error on {vpc_id}: {e}")
+
+            # Tier 2: RAG / doc-based contextual checks (only if no tier1 findings for this VPC)
+            rag_results = []
+            if not tier1_found and self.rag_search and getattr(self.rag_search, 'enabled', False):
+                try:
+                    rag_results = self.rag_search.search_security_issues(
+                        service="ec2", configuration=vpc, intent=intent, top_k=3
+                    )
+                    for doc in rag_results:
+                        findings.append({
+                            "service": "vpc",
+                            "resource": name_tag,
+                            "vpc_id": vpc_id,
+                            "issue": doc.get("title") or doc.get("doc_id"),
+                            "rule_id": doc.get("doc_id"),
+                            "severity": "medium",
+                            "auto_safe": False,
+                            "can_auto_fix": False,
+                            "fix_type": None,
+                            "fix_instructions": [s for s in doc.get("sections", {}).keys()] or [doc.get("title")],
+                            "source": "rag",
+                            "tier": 2,
+                            "intent": intent,
+                            "description": next(iter(doc.get("sections", {}).values()), ""),
+                        })
+                except Exception as e:
+                    print(f"[VPCAgent] RAG search failed for {vpc_id}: {e}")
+
+            # Tier 3: LLM fallback (only if nothing found by rules or RAG and analyzer enabled)
+            if not tier1_found and not rag_results and self.llm_analyzer:
+                try:
+                    llm_findings = self.llm_analyzer.analyze_security_issues(
+                        service="ec2",
+                        resource_name=name_tag,
+                        configuration=vpc,
+                        intent=intent,
+                        user_context=user_intent_input or "",
+                    )
+                    for lf in llm_findings:
+                        findings.append({
+                            "service": "vpc",
+                            "resource": name_tag,
+                            "vpc_id": vpc_id,
+                            "issue": lf.get("issue"),
+                            "rule_id": lf.get("detection_method", "llm"),
+                            "severity": lf.get("severity", "medium"),
+                            "auto_safe": lf.get("auto_safe", False),
+                            "can_auto_fix": lf.get("can_auto_fix", False),
+                            "fix_type": None,
+                            "fix_instructions": lf.get("fix_instructions", []),
+                            "source": "llm",
+                            "tier": 3,
+                            "intent": intent,
+                            "description": lf.get("description", ""),
+                        })
+                except Exception as e:
+                    print(f"[VPCAgent] LLM analysis failed for {vpc_id}: {e}")
 
         return self.executor.format_for_fixer(findings)
